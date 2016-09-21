@@ -2,6 +2,7 @@ require 'torch'
 require 'parse'
 require 'nn'
 require 'lfs'
+require 'rnn'
 
 function create_dataset(dir)
 	local d = {}
@@ -18,8 +19,15 @@ function create_dataset(dir)
 end
 
 function create_model()
-	local model = --IDK
-	
+	local model = nn.Sequenial()
+	--rho(Steps to backpropagate) = 100
+	layer1=nn.FastLSTM(88, 256, 100)
+	layer1:maskZero(1)
+	model:add(layer1)
+	model:add(nn.FastLSTM((88, #len), 256, 50))
+	model:add(nn.FastLSTM((256, 50), (512), 50))
+	model.add(nn.Linear(512, 512))
+	model:add(nn.ReLU())
 
 	return model
 end
