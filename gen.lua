@@ -6,7 +6,6 @@ function generate(pattern, ...)
 	local time = 0
 	for k, event in pairs(pattern) do
 		local tones = {}
-		--TODO Make something with tones
 		for n, i in pairs(event) do
 			if i ~= 0 then tones[#tones+1] = n end
 		end
