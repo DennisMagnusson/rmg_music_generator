@@ -4,9 +4,10 @@ function generate(pattern, ...)
 	local arg = table.pack(...)
 	local score = {1, {}}
 	local time = 0
-	for k, event in pairs(pattern) do
+	for k, frame in pairs(pattern) do
 		local tones = {}
-		for n, i in pairs(event) do
+		--TODO Check if this is working
+		for n, i in pairs(frame) do
 			if i ~= 0 then tones[#tones+1] = n end
 		end
 
