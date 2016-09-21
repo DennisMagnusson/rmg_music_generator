@@ -19,4 +19,3 @@ function parse(filename)
 	
 	return r
 end
-
