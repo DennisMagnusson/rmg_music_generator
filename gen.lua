@@ -6,7 +6,6 @@ function generate(pattern, ...)
 	local time = 0
 	for k, frame in pairs(pattern) do
 		local tones = {}
-		--TODO Check if this is working
 		for n, i in pairs(frame) do
 			if i ~= 0 then tones[#tones+1] = n end
 		end

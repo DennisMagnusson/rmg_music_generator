@@ -14,7 +14,6 @@ function parse(filename)
 
 	local i = 0
 	for k, event in pairs(notes) do
-		print(i, #r)
 		--If the times are the same
 		if (i > 1 and event[2] == notes[i-1][2]) then
 			r[#r-1][event[5]-20] = 1
