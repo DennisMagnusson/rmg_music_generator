@@ -82,10 +82,10 @@ function train(model, data, ep)
 	--for key, s in pairs(data) do
 	--for i = 1, #data do
 	for i = 1, maxlen do
-		local batch = create_batch(s, 50, 1)
-		print(key, "/", #data)
+		local batch = create_batch(data, 50, i)
 		--trainer:train(batch)
 		fit(model, criterion, lr, batch)
+		print(key, "/", #data)
 	end
 
 	model.evaluate() --Exit training mode
@@ -113,24 +113,25 @@ end
 --TODO Test
 --Check for infinite loops?
 function create_batch(data, len, i)
-	len = len or 50
-	x = torch.Tensor(#data, len, 88)
-	y = torch.Tensor(#data, 88)
+	local len = len or 50
+	local x = torch.zeros(#data, len, 88)
+	local y = torch.zeros(#data, 88)
 	--local n = 0
 	--if i < len then n = i else n = len end
 	local start = i - len 
-	if i < 1 then i = 1 end
+	if start < 1 then start = 1 end
 	for key, s in pairs(data) do
-		for u = 1, len, do
+		for u = 1, len do
 			for k = 1, 88 do
 				x[key][u][k] = s[u+start][k]
 			end
-			x = fill(x, len, 88)--TODO Test
+			--x = fill(x, len, 88)
 		end
 		for k = 1, 88 do
 			y[key][k] = s[len+1][k]
 		end
 	end
+	collectgarbage()
 	return {x, y}
 	--[[
 	local x = {}
