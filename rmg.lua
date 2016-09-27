@@ -19,28 +19,6 @@ function create_dataset(dir)
 	end
 
 	return d
-	--Can I just use a table, then convert to tensor when training?
-	--[[
-	--Fill with zeros
-	local empty_frame = {}
-	for i = 1, 88 do empty_frame[i] = 0 end
-	for key, songs in pairs(d) do
-		for k = 1, #d do
-			if not d[key][k] then d[key][k] = empty_frame end
-		end
-	end
-	
-	--local tensor = torch.zeros(#d, maxlen, 88)
-	local tensor = torch.Tensor(d)
-	[[--
-	for n, s in pairs(d) do
-		for key, frame in pairs(s) do
-			tensor[n][key] = frame
-		end
-	end
-
-	--return tensor 
-	]]
 end
 
 function fit(model, criterion, lr, batch)
@@ -57,7 +35,9 @@ function fit(model, criterion, lr, batch)
 		model:updateParameters(lr)
 	end
 end
-
+--[[ TODO Let's get shit sorted out here, x in a batch is a tensor of dim=(#data, 50, 88)
+y in a batch is a tensor of dim=(#data, 88) or dim=(#data, 1, 88) or, in worst case(#data, 50, 88) where the first 49 timesteps are zeros.
+]]
 function train(model, data, ep)
 	model:training()
 	--local criterion = nn.ClassNLLCriterion()
@@ -65,8 +45,9 @@ function train(model, data, ep)
 	local trainer = nn.StochasticGradient(model, criterion)
 	trainer.learningRate = 0.01
 	trainer.maxIteration = ep or 1--TODO Do custom epochs?
-	
+		
 	local maxlen = get_maxlen(data)
+	--[[
 	for i = 2, maxlen do
 		--local x = {}
 		--local y = {}
@@ -93,38 +74,31 @@ function train(model, data, ep)
 		print(x:size(), y:size())
 		--local batch = {torch.Tensor(x), torch.Tensor(y)}
 		local batch = {x, y}
-		trainer.train(batch)
-		--fit(model, criterion, 0.01, batch)
+		--trainer.train(batch)
+		fit(model, criterion, 0.01, batch)
 	end
-	
-	--[[
+	]]	
+	--data = fill(data, maxlen, 88)
 	local lr = 0.01
-	for key, s in pairs(data) do
-		local batch = create_batch(s, 10)
+	--for key, s in pairs(data) do
+	for i = 1, #data do
+		--local batch = create_batch(s, 10)
 		print(key, "/", #data)
 		--trainer:train(batch)
 		fit(model, criterion, lr, batch)
 	end
-	]]
+
 	model.evaluate() --Exit training mode
 end
 
 function fill(r, rows, cols)
-	local empty = {}
-	print(r, #r)
-	for k=1, cols do
-		empty[k] = 0
-	end
-	print(#empty)
-
 	for i = 1, rows do
-		if not r[i] then
-			r[i] = empty
+		for u = 1, cols do
+			if not r[i][u] then r[i][u] = 0 end
 		end
-		--if #r[i] ~= 88 then print(#r[i], i) end
 	end
-	--local x = torch.Tensor(r)
-	return r
+	local x = torch.Tensor(r)
+	return x
 end
 
 function get_maxlen(data)
@@ -138,8 +112,26 @@ end
 --Input = 1 song. len=length of x
 --TODO Test
 --Check for infinite loops?
-function create_batch(data, len)
-	len = 100 or len
+function create_batch(data, len, i)
+	len = len or 50
+	x = torch.Tensor(#data, len, 88)
+	y = torch.Tensor(#data, 88)
+	--local n = 0
+	--if i < len then n = i else n = len end
+	local start = i - len 
+	if i < 1 then i = 1 end
+	for key, s in pairs(data) do
+		for u = 1, len, do
+			for k = 1, 88 do
+				x[key][u][k] = s[u+start][k]
+			end
+			x = fill(x, len, 88)--TODO Test
+		end
+		for k = 1, 88 do
+			y[key][k] = s[len+1][k]
+		end
+	end	
+	--[[
 	local x = {}
 	local y = {}
 	for n = 2, #data do
@@ -159,6 +151,7 @@ function create_batch(data, len)
 	print("batch done")
 	collectgarbage()
 	return batch
+	]]
 end
 
 function create_model()
