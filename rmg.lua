@@ -17,7 +17,6 @@ function create_dataset(dir)
 		end
 		::cont::
 	end
-
 	return d
 end
 
@@ -81,8 +80,9 @@ function train(model, data, ep)
 	--data = fill(data, maxlen, 88)
 	local lr = 0.01
 	--for key, s in pairs(data) do
-	for i = 1, #data do
-		--local batch = create_batch(s, 10)
+	--for i = 1, #data do
+	for i = 1, maxlen do
+		local batch = create_batch(s, 50, 1)
 		print(key, "/", #data)
 		--trainer:train(batch)
 		fit(model, criterion, lr, batch)
@@ -130,7 +130,8 @@ function create_batch(data, len, i)
 		for k = 1, 88 do
 			y[key][k] = s[len+1][k]
 		end
-	end	
+	end
+	return {x, y}
 	--[[
 	local x = {}
 	local y = {}
