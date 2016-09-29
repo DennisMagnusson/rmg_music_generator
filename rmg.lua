@@ -46,6 +46,10 @@ function train(model, data, ep)
 	local maxlen = get_maxlen(data)
 	local lr = 0.01
 	for i = 1, maxlen do
+		--[[Okay, okay I think I got this shit sorted out. A batch is a table of tensors.
+		#table = rho. In the example the target is a tensor of the same dims, which is a shame. I'm gonna have to figure out a way to do that. TODO Check out the sequence-to-one.lua example for guidelines.
+		]]
+
 		local batch = create_batch(data, 50, i)
 		--trainer:train(batch)
 		fit(model, criterion, lr, batch)
