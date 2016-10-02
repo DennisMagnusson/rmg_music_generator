@@ -34,8 +34,6 @@ end
 
 function train(model, data, ep)
 	model:training()--Training mode
-	--local criterion = nn.CrossEntropyCriterion()
-	--CrossEntropy is acting weird, use MSE instead
 	local criterion = nn.MSECriterion()
 	local trainer = nn.StochasticGradient(model, criterion)
 	trainer.learningRate = 0.01
