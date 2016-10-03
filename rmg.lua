@@ -19,6 +19,50 @@ function create_dataset(dir)
 	return d
 end
 
+--TODO test
+function create_song(model, firstnote, len, temp)
+	firstnote = firstnote or 43
+	len = len or 100
+	temp = temp or 0.8
+	local song = torch.Tensor(len, 88)
+	local rho = 88
+	local x = torch.zeros(rho, 88)
+	x[firstnote] = 1
+	local frame = torch.zeros(88)
+	for i=1, len do
+		for u=2, rho do
+			x[u-1] = x[u]
+		end
+		x[rho] = frame
+
+		local pd = model:forward(x)--Probability distrobution... thing
+		pd = pd:reshape(88)
+		frame = sample(pd, temp)
+
+		song[i] = frame
+	end
+	print("Done")
+
+	return torch.totable(song)
+end
+
+
+--Kind of... empty arrays
+--Gotta fix the model or this function FIXME
+function sample(r, temp)
+	r = torch.exp(torch.log(r) / temp)
+	r = r / torch.sum(r)
+	--r = torch.mul(r, 1/88)
+	--Figure out a way here
+	local frame = torch.zeros(88)
+	math.randomseed(os.time())
+	for i = 1, 88 do
+		local rand = math.random()
+		if r[i] > rand then frame[i] = 1; end
+	end
+	return frame
+end
+
 function fit(model, criterion, lr, batch)
 	for i = 1, 88 do
 		local x = batch[1][i]
@@ -39,7 +83,7 @@ function train(model, data, ep)
 	trainer.learningRate = 0.01
 	trainer.maxIteration = ep or 1--TODO Do custom epochs?
 		
-	local maxlen = get_maxlen(data)
+	--local maxlen = get_maxlen(data)
 	local totlen = get_total_len(data)
 	local lr = 0.01
 	--local rho = 50
