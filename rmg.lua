@@ -4,10 +4,14 @@ require 'nn'
 require 'lfs'
 require 'rnn'
 require 'optim'
+require 'cltorch'
+require 'clnn'
 
 data_width = 88
 rho = 88
+hiddensize = 88
 
+gpu = true
 
 function create_dataset(dir)
 	local d = {}
@@ -55,13 +59,13 @@ end
 function sample(r, temp)
 	r = torch.exp(torch.log(r) / temp)
 	r = r / torch.sum(r)
-	--r = torch.mul(r, 1/88)
-	--Figure out a way here
+	--TODO Make the sum 1 or 1.5 or something
+
 	local frame = torch.zeros(data_width)
 	math.randomseed(os.time())
 	for i = 1, data_width do
 		local rand = math.random()
-		if r[i] > rand then frame[i] = 1; end
+		if r[i] > rand then frame[i] = 1 end
 	end
 	return frame
 end
@@ -92,7 +96,6 @@ function train(model, data, ep)
 	local batch_size = 88
 
 	for i = 1, totlen-rho-batch_size, rho do
-		--local batch = create_batch(data, 50, i, rho)
 		local batch = create_batch(data, batch_size, i, rho)
 		io.write("\r"..math.floor(i/rho).."/"..math.ceil((totlen-rho)/rho))
 		fit(model, criterion, lr, batch)
@@ -150,22 +153,18 @@ function create_batch(data, batch_size, start_index)
 			x[u][o] = torch.Tensor(song[i+o+u])
 		end
 		if not song[i+u+rho+1] then print(#song, i, u) end
-		y[u] = torch.Tensor(song[i+u+rho+1])--Error here FIXME
+		y[u] = torch.Tensor(song[i+u+rho+1])
 	end
 	return {x, y}	
 end
 
 function create_model()
-	--local rho = 50
-	local hiddensize = 88 
 	local dropoutprob = 0.2
 	local model = nn.Sequential()
 	model:add(nn.FastLSTM(data_width, hiddensize, rho))
 	model:add(nn.Tanh())
-	model:add(nn.Narrow(1, 88))
+	model:add(nn.Narrow(1, hiddensize))
 	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
 	return model
 end
-
---torch.setdefaulttensortype('torch.FloatTensor')
