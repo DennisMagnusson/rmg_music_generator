@@ -5,6 +5,10 @@ require 'lfs'
 require 'rnn'
 require 'optim'
 
+data_width = 88
+rho = 88
+
+
 function create_dataset(dir)
 	local d = {}
 	local maxlen = 0
@@ -24,11 +28,10 @@ function create_song(model, firstnote, len, temp)
 	firstnote = firstnote or 43
 	len = len or 100
 	temp = temp or 0.8
-	local song = torch.Tensor(len, 88)
-	local rho = 88
-	local x = torch.zeros(rho, 88)
+	local song = torch.Tensor(len, data_width)
+	local x = torch.zeros(rho, data_width)
 	x[firstnote] = 1
-	local frame = torch.zeros(88)
+	local frame = torch.zeros(data_width)
 	for i=1, len do
 		for u=2, rho do
 			x[u-1] = x[u]
@@ -36,7 +39,7 @@ function create_song(model, firstnote, len, temp)
 		x[rho] = frame
 
 		local pd = model:forward(x)--Probability distrobution... thing
-		pd = pd:reshape(88)
+		pd = pd:reshape(data_width)
 		frame = sample(pd, temp)
 
 		song[i] = frame
@@ -54,9 +57,9 @@ function sample(r, temp)
 	r = r / torch.sum(r)
 	--r = torch.mul(r, 1/88)
 	--Figure out a way here
-	local frame = torch.zeros(88)
+	local frame = torch.zeros(data_width)
 	math.randomseed(os.time())
-	for i = 1, 88 do
+	for i = 1, data_width do
 		local rand = math.random()
 		if r[i] > rand then frame[i] = 1; end
 	end
@@ -86,8 +89,6 @@ function train(model, data, ep)
 	--local maxlen = get_maxlen(data)
 	local totlen = get_total_len(data)
 	local lr = 0.01
-	--local rho = 50
-	local rho = 88
 	local batch_size = 88
 
 	for i = 1, totlen-rho-batch_size, rho do
@@ -127,7 +128,7 @@ function get_total_len(data)
 end
 
 --TODO Lots of improvements to be made
-function create_batch(data, batch_size, start_index, rho)
+function create_batch(data, batch_size, start_index)
 	local i = start_index
 	local song = {}
 	--Select the correct song
@@ -141,8 +142,8 @@ function create_batch(data, batch_size, start_index, rho)
 		if i < 1 then i = 1 end
 	end
 	--Create batch
-	local x = torch.zeros(batch_size, rho, 88)
-	local y = torch.zeros(batch_size, 88)
+	local x = torch.zeros(batch_size, rho, data_width)
+	local y = torch.zeros(batch_size, data_width)
 
 	for u = 1, batch_size do
 		for o = rho, 1, -1 do
@@ -156,14 +157,13 @@ end
 
 function create_model()
 	--local rho = 50
-	local rho = 88
 	local hiddensize = 88 
 	local dropoutprob = 0.2
 	local model = nn.Sequential()
-	model:add(nn.FastLSTM(88, hiddensize, rho))
+	model:add(nn.FastLSTM(data_width, hiddensize, rho))
 	model:add(nn.Tanh())
 	model:add(nn.Narrow(1, 88))
-	model:add(nn.Linear(hiddensize, 88))
+	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
 	return model
 end
