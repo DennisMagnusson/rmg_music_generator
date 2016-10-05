@@ -63,10 +63,9 @@ function sample(r, temp)
 	r = torch.exp(torch.log(r) / temp)
 	r = r / torch.sum(r)
 	local k = 1.5
-	r = r*(k / sum(r))
+	r = r*(k / sum(r)) --Make the sum of r = k
 
 	local frame = torch.zeros(data_width)
-	math.randomseed(os.time())
 	for i = 1, data_width do
 		local rand = math.random()
 		if r[i] > rand then frame[i] = 1 end
@@ -90,6 +89,7 @@ function fit(model, criterion, lr, batch)
 end
 
 function train(model, data, ep)
+	math.randomseed(os.time())
 	model:training()--Training mode
 	local criterion = nn.MSECriterion()
 	if opencl then criterion = criterion:cl() end
