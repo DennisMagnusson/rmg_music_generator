@@ -74,16 +74,21 @@ function sample(r, temp)
 end
 
 function fit(model, criterion, batch)
+	local totloss = 0
+
 	for i = 1, batch[1]:size(1) do
 		local x = batch[1][i]
 		local y = batch[2][i]
 		local pred = model:forward(x)
-		local err  = criterion:forward(pred, y)
+		local err = criterion:forward(pred, y)
+		totloss = totloss + err
 		local gradcrit = criterion:backward(pred, y) 
 		model:zeroGradParameters()
 		model:backward(x, gradcrit)
 		model:updateParameters(lr)
 	end
+	
+	return totloss / batch[1]:size(1)
 end
 
 function train(model, data, ep)
@@ -95,12 +100,13 @@ function train(model, data, ep)
 	local totlen = get_total_len(data)
 	local batch_size = 10
 	for e = 1, ep do
+		local totloss = 0
 		for i = 1, totlen-rho-batch_size, rho do
 			local batch = create_batch(data, batch_size, i, rho)
 			io.write("\r"..math.floor(i/rho).."/"..math.ceil((totlen-rho)/rho))
-			fit(model, criterion, batch)
+			totloss = totloss + fit(model, criterion, batch)
 		end
-		--Print loss
+		print("\nAvg loss", totloss / (totlen-rho-batch_size))
 	end
 
 	model:evaluate() --Exit training mode
