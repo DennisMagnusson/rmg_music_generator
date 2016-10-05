@@ -62,7 +62,8 @@ end
 function sample(r, temp)
 	r = torch.exp(torch.log(r) / temp)
 	r = r / torch.sum(r)
-	--TODO Make the sum 1 or 1.5 or something
+	local k = 1.5
+	r = r*(k / sum(r))
 
 	local frame = torch.zeros(data_width)
 	math.randomseed(os.time())
