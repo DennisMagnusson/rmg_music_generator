@@ -158,9 +158,15 @@ end
 function create_model()
 	local dropoutprob = 0.2
 	local model = nn.Sequential()
+	local rnn = nn.Sequential()
+	rnn:add(nn.FastLSTM(data_width, hiddensize, rho))
+	rnn:add(nn.FastLSTM(hiddensize, hiddensize, rho))
 	model:add(nn.SplitTable(1,2))
-	model:add(nn.Sequencer(nn.FastLSTM(data_width, hiddensize, rho)))
+	--model:add(nn.Sequencer(nn.FastLSTM(data_width, hiddensize, rho))) --TODO Make seperate
+	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
+	model:add(nn.Linear(hiddensize, hiddensize))
+	model:add(nn.ReLU())
 	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
 	if opencl then model = model:cl() end
