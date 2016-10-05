@@ -9,7 +9,7 @@ data_width = 88
 rho = 88
 hiddensize = 88
 
-opencl = true
+opencl = false
 
 if opencl then
 	require 'cltorch'
@@ -89,7 +89,7 @@ end
 function train(model, data, ep)
 	model:training()--Training mode
 	local criterion = nn.MSECriterion()
-	if opencl then criterion = criterion:cl()
+	if opencl then criterion = criterion:cl() end
 	local trainer = nn.StochasticGradient(model, criterion)
 	trainer.learningRate = 0.01
 	trainer.maxIteration = ep or 1--TODO Do custom epochs?
