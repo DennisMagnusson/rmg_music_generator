@@ -110,16 +110,6 @@ function train(model, data, ep)
 	model:evaluate() --Exit training mode
 end
 
-function fill(r, rows, cols)
-	for i = 1, rows do
-		for u = 1, cols do
-			if not r[i][u] then r[i][u] = 0 end
-		end
-	end
-	local x = torch.Tensor(r)
-	return x
-end
-
 function get_total_len(data)
 	local i = 0
 	for k, s in pairs(data) do
