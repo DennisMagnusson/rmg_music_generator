@@ -105,7 +105,7 @@ function train(model, data, ep)
 		fit(model, criterion, lr, batch)
 	end
 
-	model.evaluate() --Exit training mode
+	model:evaluate() --Exit training mode
 end
 
 function fill(r, rows, cols)
