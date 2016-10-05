@@ -19,7 +19,6 @@ end
 
 function create_dataset(dir)
 	local d = {}
-	local maxlen = 0
 	for filename in lfs.dir(dir.."/.") do
 		if filename[1] == '.' then goto cont end
 		local song = parse(dir.."/"..filename)
@@ -119,14 +118,6 @@ function fill(r, rows, cols)
 	end
 	local x = torch.Tensor(r)
 	return x
-end
-
-function get_maxlen(data)
-	local max = 0
-	for key, d in pairs(data) do
-		if #d > max then max = #d end
-	end
-	return max
 end
 
 function get_total_len(data)
