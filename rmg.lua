@@ -1,21 +1,24 @@
-require 'torch'
 require 'parse'
-require 'nn'
 require 'lfs'
 require 'rnn'
 require 'optim'
 
 data_width = 88
-rho = 50
+rho = 25
 lr = 0.01
 hiddensize = 128
+batch_size = 1024
 
-opencl = false
+opencl = true
 
 if opencl then
 	require 'cltorch'
 	require 'clnn'
+else
+	require 'torch'
+	require 'nn'
 end
+
 
 function create_dataset(dir)
 	local d = {}
@@ -98,12 +101,12 @@ function train(model, data, ep)
 	if opencl then criterion = criterion:cl() end
 	
 	local totlen = get_total_len(data)
-	local batch_size = 10
 	for e = 1, ep do
 		print("Epoch: "..e)
 		local totloss = 0
 		for i = 1, totlen-rho-batch_size, rho do
-			local batch = create_batch(data, batch_size, i, rho)
+			print(i)
+			local batch = create_batch(data, i, rho)
 			io.write("\r"..math.floor(i/rho).."/"..math.ceil((totlen-rho)/rho))
 			totloss = totloss + fit(model, criterion, batch)
 		end
@@ -122,7 +125,7 @@ function get_total_len(data)
 end
 
 --TODO Lots of improvements to be made
-function create_batch(data, batch_size, start_index)
+function create_batch(data, start_index)
 	local i = start_index
 	local song = {}
 	--Select the correct song
@@ -160,7 +163,6 @@ function create_model()
 	local model = nn.Sequential()
 	local rnn = nn.Sequential()
 	rnn:add(nn.FastLSTM(data_width, hiddensize, rho))
-	rnn:add(nn.FastLSTM(hiddensize, hiddensize, rho))
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
@@ -171,3 +173,11 @@ function create_model()
 	if opencl then model = model:cl() end
 	return model
 end
+
+
+
+model = create_model()
+data = create_dataset("data")
+data = {data[1]}
+train(model, data, 1)
+
