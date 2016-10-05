@@ -4,14 +4,17 @@ require 'nn'
 require 'lfs'
 require 'rnn'
 require 'optim'
-require 'cltorch'
-require 'clnn'
 
 data_width = 88
 rho = 88
 hiddensize = 88
 
-gpu = true
+opencl = true
+
+if opencl then
+	require 'cltorch'
+	require 'clnn'
+end
 
 function create_dataset(dir)
 	local d = {}
@@ -86,6 +89,7 @@ end
 function train(model, data, ep)
 	model:training()--Training mode
 	local criterion = nn.MSECriterion()
+	if opencl then criterion = criterion:cl()
 	local trainer = nn.StochasticGradient(model, criterion)
 	trainer.learningRate = 0.01
 	trainer.maxIteration = ep or 1--TODO Do custom epochs?
@@ -155,7 +159,13 @@ function create_batch(data, batch_size, start_index)
 		if not song[i+u+rho+1] then print(#song, i, u) end
 		y[u] = torch.Tensor(song[i+u+rho+1])
 	end
-	return {x, y}	
+
+	if opencl then
+		x = x:cl()
+		y = y:cl()
+	end
+
+	return {x, y}
 end
 
 function create_model()
@@ -166,5 +176,6 @@ function create_model()
 	model:add(nn.Narrow(1, hiddensize))
 	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
+	if opencl then model = model:cl() end
 	return model
 end
