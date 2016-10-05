@@ -7,6 +7,7 @@ require 'optim'
 
 data_width = 88
 rho = 50
+lr = 0.01
 hiddensize = 128
 
 opencl = false
@@ -73,7 +74,7 @@ function sample(r, temp)
 	return frame
 end
 
-function fit(model, criterion, lr, batch)
+function fit(model, criterion, batch)
 	--for i = 1, 88 do
 	--for i = 1, 50 do
 	for i = 1, 10 do
@@ -94,18 +95,17 @@ function train(model, data, ep)
 	local criterion = nn.MSECriterion()
 	if opencl then criterion = criterion:cl() end
 	local trainer = nn.StochasticGradient(model, criterion)
-	trainer.learningRate = 0.01
+	trainer.learningRate = lr
 	trainer.maxIteration = ep or 1--TODO Do custom epochs?
 		
 	--local maxlen = get_maxlen(data)
 	local totlen = get_total_len(data)
-	local lr = 0.01
 	local batch_size = 10
 
 	for i = 1, totlen-rho-batch_size, rho do
 		local batch = create_batch(data, batch_size, i, rho)
 		io.write("\r"..math.floor(i/rho).."/"..math.ceil((totlen-rho)/rho))
-		fit(model, criterion, lr, batch)
+		fit(model, criterion, batch)
 	end
 
 	model:evaluate() --Exit training mode
