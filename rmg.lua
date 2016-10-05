@@ -6,8 +6,8 @@ require 'rnn'
 require 'optim'
 
 data_width = 88
-rho = 88
-hiddensize = 88
+rho = 50
+hiddensize = 128
 
 opencl = false
 
@@ -74,7 +74,9 @@ function sample(r, temp)
 end
 
 function fit(model, criterion, lr, batch)
-	for i = 1, 88 do
+	--for i = 1, 88 do
+	--for i = 1, 50 do
+	for i = 1, 10 do
 		local x = batch[1][i]
 		local y = batch[2][i]
 		local pred = model:forward(x)
@@ -97,7 +99,7 @@ function train(model, data, ep)
 	--local maxlen = get_maxlen(data)
 	local totlen = get_total_len(data)
 	local lr = 0.01
-	local batch_size = 88
+	local batch_size = 10
 
 	for i = 1, totlen-rho-batch_size, rho do
 		local batch = create_batch(data, batch_size, i, rho)
@@ -171,9 +173,9 @@ end
 function create_model()
 	local dropoutprob = 0.2
 	local model = nn.Sequential()
-	model:add(nn.FastLSTM(data_width, hiddensize, rho))
-	model:add(nn.Tanh())
-	model:add(nn.Narrow(1, hiddensize))
+	model:add(nn.SplitTable(1,2))
+	model:add(nn.Sequencer(nn.FastLSTM(data_width, hiddensize, rho)))
+	model:add(nn.SelectTable(-1))
 	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
 	if opencl then model = model:cl() end
