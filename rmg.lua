@@ -63,7 +63,7 @@ function sample(r, temp)
 	r = torch.exp(torch.log(r) / temp)
 	r = r / torch.sum(r)
 	local k = 1.5
-	r = r*(k / sum(r)) --Make the sum of r = k
+	r = r*(k / torch.sum(r)) --Make the sum of r = k
 
 	local frame = torch.zeros(data_width)
 	for i = 1, data_width do
@@ -100,13 +100,14 @@ function train(model, data, ep)
 	local totlen = get_total_len(data)
 	local batch_size = 10
 	for e = 1, ep do
+		print("Epoch: "..e)
 		local totloss = 0
 		for i = 1, totlen-rho-batch_size, rho do
 			local batch = create_batch(data, batch_size, i, rho)
 			io.write("\r"..math.floor(i/rho).."/"..math.ceil((totlen-rho)/rho))
 			totloss = totloss + fit(model, criterion, batch)
 		end
-		print("\nAvg loss", totloss / (totlen-rho-batch_size))
+		print("\rAvg loss", totloss / (totlen-rho-batch_size))
 	end
 
 	model:evaluate() --Exit training mode
