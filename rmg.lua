@@ -86,6 +86,7 @@ function fit(model, criterion, batch)
 	local err = criterion:forward(pred, y)
 	totloss = totloss + err
 	local gradcrit = criterion:backward(pred, y) 
+
 	model:zeroGradParameters()
 	model:backward(x, gradcrit)
 	model:updateParameters(lr)
@@ -96,12 +97,14 @@ end
 function train(model, data, ep)
 	math.randomseed(os.time())
 	model:training()--Training mode
+
 	local criterion = nn.MSECriterion()
 	if opencl then criterion = criterion:cl() end
 	
 	local totlen = get_total_len(data)
 	for e = 1, ep do
 		print("Epoch: "..e)
+
 		local totloss = 0
 		for i = 1, totlen-batch_size, batch_size do
 			io.write("\r"..i.."/"..(totlen-batch_size))
@@ -159,9 +162,11 @@ end
 function create_model()
 	local dropoutprob = 0.2
 	local model = nn.Sequential()
+
 	local rnn = nn.Sequential()
 	rnn:add(nn.FastLSTM(data_width, hiddensize, rho))
 	rnn:add(nn.FastLSTM(hiddensize, hiddensize, rho))
+
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
@@ -169,8 +174,12 @@ function create_model()
 	model:add(nn.ReLU())
 	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
-	if opencl then model = model:cl() end
-	return model
+
+	if opencl then 
+		return model:cl()
+	else 
+		return model 
+	end
 end
 
 
