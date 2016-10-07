@@ -147,8 +147,8 @@ function create_batch(data, start_index)
 		for o = rho, 1, -1 do
 			x[u][o] = torch.Tensor(song[i+o+u])
 		end
-		if not song[i+u+rho+1] then print(#song, i, u) end
 		y[u] = torch.Tensor(song[i+u+rho+1])
+		os.exit()
 	end
 
 	if opencl then
@@ -157,6 +157,16 @@ function create_batch(data, start_index)
 	end
 
 	return {x, y}
+end
+
+function get_notes(r)
+	local notes = {}
+	for i=1, r:size(1) do
+		if r[i] ~= 0 then
+			notes[#notes+1] = i
+		end
+	end
+	return notes
 end
 
 function create_model()
