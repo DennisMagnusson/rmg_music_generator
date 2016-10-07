@@ -1,13 +1,14 @@
 require 'parse'
+require 'gen'--TODO Do something with this
 require 'lfs'
 require 'rnn'
 require 'optim'
 
 data_width = 88
-rho = 25
+rho = 50
 lr = 0.01
-hiddensize = 128
-batch_size = 1024
+hiddensize = 512
+batch_size = 128
 
 opencl = true
 
@@ -48,7 +49,7 @@ function create_song(model, firstnote, len, temp)
 		end
 		x[rho] = frame
 
-		local pd = model:forward(x)--Probability distrobution... thing
+		local pd = model:forward(x)--Probability distribution... thing
 		pd = pd:reshape(data_width)
 		frame = sample(pd, temp)
 
@@ -79,19 +80,17 @@ end
 function fit(model, criterion, batch)
 	local totloss = 0
 
-	for i = 1, batch[1]:size(1) do
-		local x = batch[1][i]
-		local y = batch[2][i]
-		local pred = model:forward(x)
-		local err = criterion:forward(pred, y)
-		totloss = totloss + err
-		local gradcrit = criterion:backward(pred, y) 
-		model:zeroGradParameters()
-		model:backward(x, gradcrit)
-		model:updateParameters(lr)
-	end
-	
-	return totloss / batch[1]:size(1)
+	local x = batch[1]
+	local y = batch[2]
+	local pred = model:forward(x)
+	local err = criterion:forward(pred, y)
+	totloss = totloss + err
+	local gradcrit = criterion:backward(pred, y) 
+	model:zeroGradParameters()
+	model:backward(x, gradcrit)
+	model:updateParameters(lr)
+
+	return totloss
 end
 
 function train(model, data, ep)
@@ -104,10 +103,9 @@ function train(model, data, ep)
 	for e = 1, ep do
 		print("Epoch: "..e)
 		local totloss = 0
-		for i = 1, totlen-rho-batch_size, rho do
-			print(i)
+		for i = 1, totlen-batch_size, batch_size do
+			io.write("\r"..i.."/"..(totlen-batch_size))
 			local batch = create_batch(data, i, rho)
-			io.write("\r"..math.floor(i/rho).."/"..math.ceil((totlen-rho)/rho))
 			totloss = totloss + fit(model, criterion, batch)
 		end
 		print("\rAvg loss", totloss / (totlen-rho-batch_size))
@@ -163,6 +161,7 @@ function create_model()
 	local model = nn.Sequential()
 	local rnn = nn.Sequential()
 	rnn:add(nn.FastLSTM(data_width, hiddensize, rho))
+	rnn:add(nn.FastLSTM(hiddensize, hiddensize, rho))
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
@@ -175,9 +174,10 @@ function create_model()
 end
 
 
-
 model = create_model()
 data = create_dataset("data")
 data = {data[1]}
-train(model, data, 1)
-
+--for i = 1000, #data[1] do
+	--table.remove(data[1], i)
+--end
+train(model, data, 32)
