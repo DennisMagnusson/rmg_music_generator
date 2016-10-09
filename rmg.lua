@@ -82,10 +82,12 @@ function fit(model, criterion, batch)
 
 	local x = batch[1]
 	local y = batch[2]
-	local pred = model:forward(x)
-	local err = criterion:forward(pred, y)
-	totloss = totloss + err
-	local gradcrit = criterion:backward(pred, y) 
+
+	local yhat = model:forward(x)
+	local loss = criterion:forward(yhat, y)
+	totloss = totloss + loss
+
+	local gradcrit = criterion:backward(yhat, y)
 
 	model:zeroGradParameters()
 	model:backward(x, gradcrit)
@@ -99,6 +101,7 @@ function train(model, data, ep)
 	model:training()--Training mode
 
 	local criterion = nn.MSECriterion()
+	criterion.sizeAverage = false
 	if opencl then criterion = criterion:cl() end
 	
 	local totlen = get_total_len(data)
@@ -148,7 +151,6 @@ function create_batch(data, start_index)
 			x[u][o] = torch.Tensor(song[i+o+u])
 		end
 		y[u] = torch.Tensor(song[i+u+rho+1])
-		os.exit()
 	end
 
 	if opencl then
@@ -170,20 +172,22 @@ function get_notes(r)
 end
 
 function create_model()
-	local dropoutprob = 0.2
+	local dropoutprob = 0.5
 	local model = nn.Sequential()
 
 	local rnn = nn.Sequential()
 	rnn:add(nn.FastLSTM(data_width, hiddensize, rho))
+	rnn:add(nn.Dropout(0.5))
 	rnn:add(nn.FastLSTM(hiddensize, hiddensize, rho))
 
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
 	model:add(nn.Linear(hiddensize, hiddensize))
-	model:add(nn.ReLU())
+	model:add(nn.Dropout(dropoutprob))
 	model:add(nn.Linear(hiddensize, data_width))
 	model:add(nn.ReLU())
+	model:add(nn.Dropout(dropoutprob))
 
 	if opencl then 
 		return model:cl()
@@ -195,7 +199,7 @@ end
 
 model = create_model()
 data = create_dataset("data")
-data = {data[1]}
+data = {data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]}
 --for i = 1000, #data[1] do
 	--table.remove(data[1], i)
 --end
