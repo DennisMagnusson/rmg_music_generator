@@ -105,6 +105,8 @@ function train(model, data, ep)
 	if opencl then criterion = criterion:cl() end
 	
 	local totlen = get_total_len(data)
+
+	local optim_cfg = {learningRate=lr}
 	for e = 1, ep do
 		print("Epoch: "..e)
 
@@ -112,7 +114,25 @@ function train(model, data, ep)
 		for i = 1, totlen-batch_size, batch_size do
 			io.write("\r"..i.."/"..(totlen-batch_size))
 			local batch = create_batch(data, i, rho)
-			totloss = totloss + fit(model, criterion, batch)
+			
+			local params, gradparams = model:getParameters()
+
+			function feval(params)
+				gradparams:zero()
+
+				local x = batch[1]
+				local y = batch[2]
+
+				local outputs = model:forward(x)
+				local loss = criterion:forward(outputs, y)
+				local dloss_doutputs = criterion:backward(outputs, y)
+				model:backward(x, dloss_doutputs)
+
+				return loss, gradparams
+			end
+			
+			optim.rmsprop(feval, params, optim_cfg)
+			--totloss = totloss + fit(model, criterion, batch)
 		end
 		print("\rAvg loss", totloss / (totlen-rho-batch_size))
 	end
