@@ -1,6 +1,6 @@
 require 'parse'
 require 'gen'--TODO Do something with this
-require 'lfs'
+require 'lfs'--Error on Windows
 require 'rnn'
 require 'optim'
 
@@ -10,7 +10,9 @@ lr = 0.01
 hiddensize = 512
 batch_size = 128
 
-opencl = true
+opencl = false
+logger = optim.Logger('log.log')
+logger:setNames{'epoch', 'loss'}
 
 if opencl then
 	require 'cltorch'
@@ -19,7 +21,6 @@ else
 	require 'torch'
 	require 'nn'
 end
-
 
 function create_dataset(dir)
 	local d = {}
@@ -35,7 +36,7 @@ function create_dataset(dir)
 end
 
 --TODO test
-function create_song(model, firstnote, len, temp)
+function create_song(model, firstnote, len, temp, filename)
 	firstnote = firstnote or 43
 	len = len or 100
 	temp = temp or 0.8
@@ -56,6 +57,8 @@ function create_song(model, firstnote, len, temp)
 		song[i] = frame
 	end
 	print("Done")
+
+	if filename then gen.generate(torch.totable(song), filename) end
 
 	return torch.totable(song)
 end
@@ -110,7 +113,9 @@ function train(model, data, ep)
 	for e = 1, ep do
 		print("Epoch: "..e)
 
+
 		local totloss = 0
+		local n = 0
 		for i = 1, totlen-batch_size, batch_size do
 			io.write("\r"..i.."/"..(totlen-batch_size))
 			local batch = create_batch(data, i, rho)
@@ -128,10 +133,14 @@ function train(model, data, ep)
 				local dloss_doutputs = criterion:backward(outputs, y)
 				model:backward(x, dloss_doutputs)
 
+				totloss = totloss + loss
+				n = n+1
+
 				return loss, gradparams
 			end
 			
 			optim.rmsprop(feval, params, optim_cfg)
+			logger_add{e, totloss/n}
 			--totloss = totloss + fit(model, criterion, batch)
 		end
 		print("\rAvg loss", totloss / (totlen-rho-batch_size))
