@@ -1,6 +1,6 @@
 require 'parse'
-require 'gen'--TODO Do something with this
-require 'lfs'--Error on Windows
+require 'gen'
+require 'lfs'
 require 'rnn'
 require 'optim'
 
@@ -10,7 +10,7 @@ lr = 0.01
 hiddensize = 512
 batch_size = 128
 
-opencl = false
+opencl = true
 logger = optim.Logger('log.log')
 logger:setNames{'epoch', 'loss'}
 
@@ -135,13 +135,11 @@ function train(model, data, ep)
 
 				totloss = totloss + loss
 				n = n+1
-
 				return loss, gradparams
 			end
 			
 			optim.rmsprop(feval, params, optim_cfg)
 			logger_add{e, totloss/n}
-			--totloss = totloss + fit(model, criterion, batch)
 		end
 		print("\rAvg loss", totloss / (totlen-rho-batch_size))
 	end
@@ -228,8 +226,8 @@ end
 
 model = create_model()
 data = create_dataset("data")
-data = {data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]}
---for i = 1000, #data[1] do
+--data = {data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]}
+--for i = 200, #data[1] do
 	--table.remove(data[1], i)
 --end
 train(model, data, 32)
