@@ -7,8 +7,14 @@ require 'optim'
 data_width = 88
 rho = 50
 lr = 0.01
-hiddensize = 512
-batch_size = 128
+hiddensize = 256 
+batch_size = 350
+ep = 32
+curr_ep = 1
+start_index = 1
+
+totloss = 0
+batches = 0
 
 opencl = true
 logger = optim.Logger('log.log')
@@ -81,8 +87,6 @@ function sample(r, temp)
 end
 
 function fit(model, criterion, batch)
-	local totloss = 0
-
 	local x = batch[1]
 	local y = batch[2]
 
@@ -99,49 +103,50 @@ function fit(model, criterion, batch)
 	return totloss
 end
 
-function train(model, data, ep)
+
+function next_batch()
+	start_index = start_index + batch_size
+	if start_index >= totlen-batch_size-1 then
+		start_index = 1
+		print("Epoch "..curr_ep.." done")
+		curr_ep=curr_ep+1
+		print("loss", totloss/batches)
+		logger:add{curr_ep, totloss/batches}
+		totloss = 0
+		batches = 0
+	end
+
+	return create_batch(data, start_index)
+end
+
+function feval(p)
+	if params ~= p then
+		params:copy(p)
+	end
+
+	batch = next_batch()
+	local x = batch[1]
+	local y = batch[2]
+
+	gradparams:zero()
+	local yhat = model:forward(x)
+	local loss = criterion:forward(yhat, y)
+	totloss = totloss + loss
+	model:backward(x, criterion:backward(yhat, y))
+
+	return loss, gradparams
+end
+
+function train()
 	math.randomseed(os.time())
 	model:training()--Training mode
 
-	local criterion = nn.MSECriterion()
-	criterion.sizeAverage = false
-	if opencl then criterion = criterion:cl() end
-	
-	local totlen = get_total_len(data)
-
 	local optim_cfg = {learningRate=lr}
-	for e = 1, ep do
-		print("Epoch: "..e)
 
-
-		local totloss = 0
-		local n = 0
-		for i = 1, totlen-batch_size, batch_size do
-			io.write("\r"..i.."/"..(totlen-batch_size))
-			local batch = create_batch(data, i, rho)
-			
-			local params, gradparams = model:getParameters()
-
-			function feval(params)
-				gradparams:zero()
-
-				local x = batch[1]
-				local y = batch[2]
-
-				local outputs = model:forward(x)
-				local loss = criterion:forward(outputs, y)
-				local dloss_doutputs = criterion:backward(outputs, y)
-				model:backward(x, dloss_doutputs)
-
-				totloss = totloss + loss
-				n = n+1
-				return loss, gradparams
-			end
-			
-			optim.rmsprop(feval, params, optim_cfg)
-			logger_add{e, totloss/n}
-		end
-		print("\rAvg loss", totloss / (totlen-rho-batch_size))
+	for e = 1, math.floor(ep*totlen/batch_size) do
+		if e % 250 == 0 then print(e) end
+		batches = batches + 1
+		optim.adagrad(feval, params, optim_cfg)
 	end
 
 	model:evaluate() --Exit training mode
@@ -225,9 +230,12 @@ end
 
 
 model = create_model()
+params, gradparams = model:getParameters()
+criterion = nn.MSECriterion(false)
+if opencl then criterion:cl() end
 data = create_dataset("data")
---data = {data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]}
+totlen = get_total_len(data)
 --for i = 200, #data[1] do
 	--table.remove(data[1], i)
 --end
-train(model, data, 32)
+train()
