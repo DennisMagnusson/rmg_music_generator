@@ -231,7 +231,7 @@ end
 
 model = create_model()
 params, gradparams = model:getParameters()
-criterion = nn.MSECriterion(false)
+criterion = nn.MSECriterion(true)
 if opencl then criterion:cl() end
 data = create_dataset("data")
 totlen = get_total_len(data)
