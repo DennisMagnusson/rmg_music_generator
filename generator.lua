@@ -33,11 +33,11 @@ function create_song()
 
 	if opt.o ~= '' then 
 		generate(torch.totable(song), opt.o)
-	else print(get_notes(song)) end
+	else 
+		print(get_notes(song)) 
+	end
 end
 
---Kind of... empty arrays
---Gotta fix the model or this function FIXME
 function sample(r)
 	r = torch.exp(torch.log(r) / opt.temperature)
 	r = r / torch.sum(r)
