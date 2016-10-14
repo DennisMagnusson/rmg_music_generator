@@ -147,16 +147,6 @@ function create_batch(data, start_index)
 	return {x, y}
 end
 
-function get_notes(r)
-	local notes = {}
-	for i=1, r:size(1) do
-		if r[i] ~= 0 then
-			notes[#notes+1] = i
-		end
-	end
-	return notes
-end
-
 function create_model()
 	local dropoutprob = 0.5
 	local model = nn.Sequential()

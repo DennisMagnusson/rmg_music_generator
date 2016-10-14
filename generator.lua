@@ -1,18 +1,19 @@
 require 'gen'
-require 'rnn'--Is this needed?
 require 'torch'
+require 'nn'
+require 'rnn'
 
 cmd = torch.CmdLine()
-cmd:option('-o', nil, 'Output file name')
-cmd:option('-model', nil, 'Model file name')
+cmd:option('-o', '', 'Output file name')
+cmd:option('-model', '', 'Model file name')
 cmd:option('-temperature', 1.0, 'Temperature')
 cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
 cmd:option('-opencl', true, 'OpenCL')
+opt = cmd:parse(arg or {})
 
 data_width = 88
-rho = 50
-lr = 0.01
+rho = 25
 
 --Needed? TODO Check
 if opt.opencl then
@@ -23,13 +24,11 @@ else
 	require 'nn'
 end
 
-model = torch.load("models/"..opt.model)
-
 --TODO test
 function create_song()
 	local song = torch.Tensor(opt.len, data_width)
 	local x = torch.zeros(rho, data_width)
-	x[opt.firstnote] = 1
+	x[rho][opt.firstnote] = 1
 	local frame = torch.zeros(data_width)
 	for i=1, opt.len do
 		for u=2, rho do
@@ -45,16 +44,15 @@ function create_song()
 	end
 	print("Done")
 
-	if opt.o then gen.generate(torch.totable(song), opt.o) end
-
-	return torch.totable(song)
+	if opt.o ~= '' then 
+		generate(torch.totable(song), opt.o)
+	else print(get_notes(song)) end
 end
-
 
 --Kind of... empty arrays
 --Gotta fix the model or this function FIXME
 function sample(r)
-	r = torch.exp(torch.log(r) / opt.temp)
+	r = torch.exp(torch.log(r) / opt.temperature)
 	r = r / torch.sum(r)
 	local k = 1.5
 	r = r*(k / torch.sum(r)) --Make the sum of r = k
@@ -67,5 +65,20 @@ function sample(r)
 	return frame
 end
 
+function get_notes(r)
+	local notes = {}
+	for i=1, opt.len  do
+		notes[i] = {}
+		for u=1, data_width do
+			if r[i][u] ~= 0 then
+				notes[i][#notes[i]+1] = u
+			end
+		end
+	end
+	return notes
+end
+
 model = torch.load(opt.model)
+data_width = model:get(1).inputSize
+rho = model:get(1).rho
 create_song()
