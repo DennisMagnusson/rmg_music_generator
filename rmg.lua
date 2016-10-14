@@ -1,5 +1,4 @@
 require 'parse'
-require 'gen'
 require 'lfs'
 require 'rnn'
 require 'optim'
@@ -39,51 +38,6 @@ function create_dataset(dir)
 		::cont::
 	end
 	return d
-end
-
---TODO test
-function create_song(model, firstnote, len, temp, filename)
-	firstnote = firstnote or 43
-	len = len or 100
-	temp = temp or 0.8
-	local song = torch.Tensor(len, data_width)
-	local x = torch.zeros(rho, data_width)
-	x[firstnote] = 1
-	local frame = torch.zeros(data_width)
-	for i=1, len do
-		for u=2, rho do
-			x[u-1] = x[u]
-		end
-		x[rho] = frame
-
-		local pd = model:forward(x)--Probability distribution... thing
-		pd = pd:reshape(data_width)
-		frame = sample(pd, temp)
-
-		song[i] = frame
-	end
-	print("Done")
-
-	if filename then gen.generate(torch.totable(song), filename) end
-
-	return torch.totable(song)
-end
-
-
---Kind of... empty arrays
---Gotta fix the model or this function FIXME
-function sample(r, temp)
-	r = torch.exp(torch.log(r) / temp)
-	r = r / torch.sum(r)
-	local k = 1.5
-	r = r*(k / torch.sum(r)) --Make the sum of r = k
-
-	local frame = torch.zeros(data_width)
-	for i = 1, data_width do
-		local rand = math.random()
-		if r[i] > rand then frame[i] = 1 end
-	end
-	return frame
 end
 
 function fit(model, criterion, batch)
