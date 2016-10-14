@@ -9,20 +9,7 @@ cmd:option('-model', '', 'Model file name')
 cmd:option('-temperature', 1.0, 'Temperature')
 cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
-cmd:option('-opencl', true, 'OpenCL')
 opt = cmd:parse(arg or {})
-
-data_width = 88
-rho = 25
-
---Needed? TODO Check
-if opt.opencl then
-	require 'cltorch'
-	require 'clnn'
-else
-	require 'torch'
-	require 'nn'
-end
 
 --TODO test
 function create_song()
