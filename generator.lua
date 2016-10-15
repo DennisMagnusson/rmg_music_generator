@@ -1,4 +1,4 @@
-require 'gen'
+require 'midigen'
 require 'torch'
 require 'nn'
 require 'rnn'
@@ -11,7 +11,6 @@ cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
 opt = cmd:parse(arg or {})
 
---TODO test
 function create_song()
 	local song = torch.Tensor(opt.len, data_width)
 	local x = torch.zeros(rho, data_width)
@@ -29,7 +28,6 @@ function create_song()
 
 		song[i] = frame
 	end
-	print("Done")
 
 	if opt.o ~= '' then 
 		generate(torch.totable(song), opt.o)

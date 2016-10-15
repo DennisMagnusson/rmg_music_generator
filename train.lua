@@ -1,4 +1,4 @@
-require 'parse'
+require 'midiparse'
 require 'lfs'
 require 'rnn'
 require 'optim'
