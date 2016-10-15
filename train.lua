@@ -53,24 +53,6 @@ function create_dataset(dir)
 	return d
 end
 
-function fit(model, criterion, batch)
-	local x = batch[1]
-	local y = batch[2]
-
-	local yhat = model:forward(x)
-	local loss = criterion:forward(yhat, y)
-	totloss = totloss + loss
-
-	local gradcrit = criterion:backward(yhat, y)
-
-	model:zeroGradParameters()
-	model:backward(x, gradcrit)
-	model:updateParameters(opt.lr)
-
-	return totloss
-end
-
-
 function next_batch()
 	start_index = start_index + opt.batchsize
 	if start_index >= totlen-opt.batchsize-1 then
