@@ -2,6 +2,7 @@ require 'midiparse'
 require 'lfs'
 require 'rnn'
 require 'optim'
+require 'xlua'
 
 cmd = torch.CmdLine()
 cmd:option('-d', 'data', 'Dataset directory')
@@ -112,7 +113,7 @@ function train()
 	local optim_cfg = {learningRate=opt.lr}
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize) do
-		if e % 250 == 0 then print(e) end
+		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize))
 		batches = batches + 1
 		optim.adagrad(feval, params, optim_cfg)
 	end
@@ -173,12 +174,13 @@ function create_model()
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
-	model:add(nn.Linear(opt.hiddensize, opt.hiddensize))
 	for i=1, opt.denselayers-1 do
 		model:add(nn.Dropout(opt.dropout))
-		model:add(nn.Linear(opt.hiddensize, data_width))
+		model:add(nn.Linear(opt.hiddensize, opt.hiddensize))
 		model:add(nn.ReLU())
 	end
+	model:add(nn.Linear(opt.hiddensize, data_width))
+	model:add(nn.ReLU())
 
 	if opt.opencl then 
 		return model:cl()
