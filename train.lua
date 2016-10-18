@@ -3,6 +3,7 @@ require 'lfs'
 require 'rnn'
 require 'optim'
 require 'xlua'
+json = require 'json'
 
 cmd = torch.CmdLine()
 cmd:option('-d', 'data', 'Dataset directory')
@@ -16,11 +17,10 @@ cmd:option('-hiddensize', 256, 'Size of hidden layers')
 cmd:option('-dropout', 0.5, 'Dropout probability')
 cmd:option('-lr', 0.01, 'Learning rate')
 cmd:option('-opencl', true, 'Use OpenCL')
-cmd:option('-log', '', 'Log file')
 opt = cmd:parse(arg or {})
 
 
-data_width = 88
+data_width = 93
 curr_ep = 1
 start_index = 1
 
@@ -28,9 +28,18 @@ totloss = 0
 batches = 0
 
 if opt.log ~= '' then
-	logger = optim.Logger(opt.log)
+	logger = optim.Logger(opt.o..".log")
 	logger:setNames{'epoch', 'loss'}
 end
+
+meta = {batchsize=opt.batchsize, 
+        rho=opt.rho, 
+		recurrentlayers=opt.recurrentlayers, 
+		denselayers=opt.denselayers, 
+		hiddensize=opt.hiddensize,
+		dropout=opt.dropout,
+		lr=opt.lr,
+		dataset=opt.d}
 
 if opt.opencl then
 	require 'cltorch'
@@ -38,6 +47,29 @@ if opt.opencl then
 else
 	require 'torch'
 	require 'nn'
+end
+
+function normalize_col(r, col)
+	local min = 99990
+	local max = 0
+	for i=1, #r do
+		for u=1, #r[i] do
+			local val = r[i][u][col]
+			if min > val then min = val end
+			if max < val then max = val end
+		end
+	end
+
+	for i=1, #r do
+		for u=1, #r[i] do
+			r[i][u][col] = (r[i][u][col] - min)/(max - min)
+		end
+	end
+
+	meta[col..'min'] = min
+	meta[col..'max'] = max
+
+	return r
 end
 
 function create_dataset(dir)
@@ -177,8 +209,13 @@ params, gradparams = model:getParameters()
 criterion = nn.MSECriterion(true)
 if opt.opencl then criterion:cl() end
 data = create_dataset(opt.d)
+data = normalize_col(data, 92)
+data = normalize_col(data, 93)
 totlen = get_total_len(data)
 train()
 if opt.o ~= '' then
 	torch.save(opt.o, model)
+	local file = assert(io.open(opt.o..".meta", 'w'))
+	file:write(json.encode(meta))
+	file:close()
 end
