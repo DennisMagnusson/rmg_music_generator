@@ -14,11 +14,10 @@ function parse(filename)
 	local m = midi.midi2ms_score(file:read("*all"))
 	file:close()
 	file = nil
-	--Remove all non-notes or things
+	--Remove all non-notes or non-control_change events
 	local notes = {}
 	for k, event in pairs(m[2]) do
 		if event[1] == 'note' or event[1] == 'control_change' then 
-		--if event[1] == 'note' then
 			notes[#notes+1] = event
 		end
 	end
@@ -30,8 +29,8 @@ function parse(filename)
 		if #r > 1 and event[2]-notes[k-1][2] == 0 then
 			--Pedal
 			if event[1] == 'control_change' then
-				if event[#event] == 127 then r[#r][89] = 1
-				elseif event[#event] == 0 then r[#r][90] = 1 end
+				if event[5] == 127 then r[#r][89] = 1
+				elseif event[5] == 0 then r[#r][90] = 1 end
 				goto EOL
 			end
 			
@@ -49,15 +48,15 @@ function parse(filename)
 		for i = 1, 93 do frame[i] = 0 end
 
 		if event[1] == 'control_change' then
-			print(#r)
-			if event[#event] == 127 then r[#r][89] = 1
-			elseif event[#event] == 0 then r[#r][90] = 1 end
+			if event[5] == 127 then frame[89] = 1
+			elseif event[5] == 0 then frame[90] = 1 end
 			--delta start_time
 			if #r <= 1 then
 				frame[92] = 0
 			else 
 				frame[92] = event[2] - notes[k-1][2]
 			end
+			r[#r+1] = frame
 			goto EOL
 		end
 		
@@ -72,7 +71,7 @@ function parse(filename)
 			frame[92] = event[2] - notes[k-1][2]
 		end
 		--duration
-		frame[91] = event[3]
+		frame[93] = event[3]
 		--Insert into r
 		r[#r+1] = frame
 		::EOL::

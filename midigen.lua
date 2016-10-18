@@ -12,9 +12,9 @@ function generate(pattern, ...)
 		end
 		--Pedal
 		if frame[89] ~= 0 then 
-			score[2][#score[2]+1] = {'control_change', frame[92], 1, 64, 127}
+			score[2][#score[2]+1] = {'control_change', frame[92], 2, 64, 127}
 		elseif frame[90] ~= 0 then
-			score[2][#score[2]+1] = {'control_change', frame[92], 1, 64, 0}
+			score[2][#score[2]+1] = {'control_change', frame[92], 2, 64, 0}
 		end
 
 		for i, tone in pairs(tones) do
@@ -23,7 +23,12 @@ function generate(pattern, ...)
 		time = time+1
 
 	end
-
+	
+	table.insert(score[2], 1, {'control_change', 0, 2, 7, 100})
+	table.insert(score[2], 1, {'control_change', 0, 2, 10, 64})
+	table.insert(score[2], 1, {'control_change', 0, 1, 7, 100})
+	table.insert(score[2], 1, {'control_change', 0, 1, 10, 64})
+	table.insert(score[2], 1, {'control_change', 0, 1, 91, 127})
 	table.insert(score[2], 1, {'set_tempo', 0, 1000000})
 
 	if arg[1] then
@@ -37,7 +42,7 @@ end
 function to_abs_time(r)
 	local t = 0
 	for k, frame in pairs(r) do
-		t = t + frame[90]
+		t = t + frame[92]
 		frame[92] = t
 	end
 	return r
