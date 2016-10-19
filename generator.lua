@@ -10,6 +10,7 @@ cmd:option('-model', '', 'Model file name')
 cmd:option('-temperature', 1.0, 'Temperature')
 cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
+cmd:option('-k', 1.5, 'k-value')
 opt = cmd:parse(arg or {})
 
 function denormalize_col(r, col)
@@ -52,8 +53,7 @@ end
 function sample(r)
 	r = torch.exp(torch.log(r) / opt.temperature)
 	r = r / torch.sum(r)
-	local k = 1.5
-	r = r*(k / torch.sum(r)) --Make the sum of r = k
+	r = r*(opt.k / torch.sum(r)) --Make the sum of r = k
 
 	local frame = torch.zeros(data_width)
 	for i = 1, data_width do
@@ -82,5 +82,4 @@ rho = model:get(1).rho
 file = assert(io.open(opt.model..".meta", 'r'))
 str = file:read('*all')
 meta = json.decode(str)
-print(meta)
 create_song()
