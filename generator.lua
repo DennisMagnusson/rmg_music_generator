@@ -2,6 +2,7 @@ require 'midigen'
 require 'torch'
 require 'nn'
 require 'rnn'
+json = require 'json'
 
 cmd = torch.CmdLine()
 cmd:option('-o', '', 'Output file name')
@@ -10,6 +11,15 @@ cmd:option('-temperature', 1.0, 'Temperature')
 cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
 opt = cmd:parse(arg or {})
+
+function denormalize_col(r, col)
+	local min = meta[col..'min']
+	local max = meta[col..'max']
+	for i=1, #r do
+		r[i][col] = r[i][col]*(max-min)-min
+	end
+	return r
+end
 
 function create_song()
 	local song = torch.Tensor(opt.len, data_width)
@@ -28,6 +38,9 @@ function create_song()
 
 		song[i] = frame
 	end
+	local t = torch.totable(song)
+	t = denormalizecol(r, 92, mint, maxt)
+	t = denormalizecol(r, 93, mind, maxd)
 
 	if opt.o ~= '' then 
 		generate(torch.totable(song), opt.o)
@@ -66,4 +79,8 @@ end
 model = torch.load(opt.model)
 data_width = model:get(1).inputSize
 rho = model:get(1).rho
+file = assert(io.open(opt.model..".meta", 'r'))
+str = file:read('*all')
+meta = json.decode(str)
+print(meta)
 create_song()
