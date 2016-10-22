@@ -3,6 +3,7 @@ require 'torch'
 require 'nn'
 require 'rnn'
 json = require 'json'
+require 'cltorch'
 
 cmd = torch.CmdLine()
 cmd:option('-o', '', 'Output file name')
@@ -24,41 +25,54 @@ end
 
 function create_song()
 	local song = torch.Tensor(opt.len, data_width)
-	local x = torch.zeros(rho, data_width)
-	x[rho][opt.firstnote] = 1
+	local x = torch.zeros(meta['rho'], data_width)
+	x[meta['rho']][opt.firstnote] = 1
 	local frame = torch.zeros(data_width)
 	for i=1, opt.len do
-		for u=2, rho do
+		for u=2, meta['rho'] do
 			x[u-1] = x[u]
 		end
-		x[rho] = frame
+		x[meta['rho']] = frame
 
 		local pd = model:forward(x)--Probability distribution... thing
 		pd = pd:reshape(data_width)
 		frame = sample(pd)
 
-		song[i] = frame
+		song[i] = torch.Tensor(frame)
 	end
-	local t = torch.totable(song)
-	t = denormalizecol(r, 92, mint, maxt)
-	t = denormalizecol(r, 93, mind, maxd)
+	local r = torch.totable(song)
+	r = denormalize_col(r, 92)
+	r = denormalize_col(r, 93)
 
-	if opt.o ~= '' then 
-		generate(torch.totable(song), opt.o)
-	else 
-		print(get_notes(song)) 
+	if opt.o ~= '' then
+		generate(r, opt.o)
+	else
+		print(get_notes(song))
 	end
 end
 
-function sample(r)
+function sample(frame)
+	local r = torch.zeros(88)
+	for i=1, 88 do
+		r[i] = frame[i]
+	end
 	r = torch.exp(torch.log(r) / opt.temperature)
 	r = r / torch.sum(r)
 	r = r*(opt.k / torch.sum(r)) --Make the sum of r = k
 
-	local frame = torch.zeros(data_width)
-	for i = 1, data_width do
+	local empty = true
+	for i = 1, 88 do
 		local rand = math.random()
-		if r[i] > rand then frame[i] = 1 end
+		if r[i] > rand then
+			r[i] = 1
+			empty = false
+		else
+			r[i] = 0
+		end
+	end
+	if empty then return sample(frame) end
+	for i=1, 88 do
+		frame[i] = r[i]
 	end
 	return frame
 end
@@ -76,9 +90,8 @@ function get_notes(r)
 	return notes
 end
 
-model = torch.load(opt.model)
-data_width = model:get(1).inputSize
-rho = model:get(1).rho
+model = torch.load(opt.model):double()
+data_width = 93
 file = assert(io.open(opt.model..".meta", 'r'))
 str = file:read('*all')
 meta = json.decode(str)
