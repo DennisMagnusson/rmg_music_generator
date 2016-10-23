@@ -71,8 +71,20 @@ function sample(frame)
 		end
 	end
 	if empty then return sample(frame) end
+
 	for i=1, 88 do
 		frame[i] = r[i]
+	end
+	--Pedal
+	if math.random > frame[89] then
+		frame[89] = 1
+		frame[90] = 0
+	elseif math.random > frame[90] then
+		frame[89] = 0
+		frame[90] = 1
+	else
+		frame[89] = 0
+		frame[90] = 0
 	end
 	return frame
 end
