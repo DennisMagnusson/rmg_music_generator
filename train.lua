@@ -181,9 +181,11 @@ function create_model()
 
 	local rnn = nn.Sequential()
 	rnn:add(nn.FastLSTM(data_width, opt.hiddensize, opt.rho))
+	rnn:add(nn.SoftSign())
 	for i=1, opt.recurrentlayers-1 do
 		rnn:add(nn.Dropout(opt.dropout))
 		rnn:add(nn.FastLSTM(opt.hiddensize, opt.hiddensize, opt.rho))
+		rnn:add(nn.SoftSign())
 	end
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
