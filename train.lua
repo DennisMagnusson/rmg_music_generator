@@ -13,12 +13,24 @@ cmd:option('-batchsize', 256, 'Batch Size')
 cmd:option('-rho', 50, 'Rho value')
 cmd:option('-recurrentlayers', 1, 'Number of recurrent layers')
 cmd:option('-denselayers', 1, 'Number of dense layers')
-cmd:option('-hiddensize', 256, 'Size of hidden layers')
+cmd:option('-hiddensizes', '', 'Sizes of hidden layers, seperated by commas')
 cmd:option('-dropout', 0.5, 'Dropout probability')
 cmd:option('-lr', 0.01, 'Learning rate')
 cmd:option('-opencl', true, 'Use OpenCL')
 opt = cmd:parse(arg or {})
 
+local h = opt.hiddensizes
+opt.hiddensizes = {}
+while true do
+	if h:len() == 0 then break end
+	local c = h:find(',') or h:len()+1
+	local str = h:sub(1, c-1)
+	h = h:sub(c+1, h:len())
+	opt.hiddensizes[#opt.hiddensizes+1] = tonumber(str)
+end
+if #opt.hiddensizes ~= opt.recurrentlayers+opt.denselayers then
+	assert(false, "Number of hiddensizes is not equal to number of layers")
+end
 
 data_width = 93
 curr_ep = 1
@@ -27,16 +39,11 @@ start_index = 1
 totloss = 0
 batches = 0
 
-if opt.log ~= '' then
-	logger = optim.Logger(opt.o..".log")
-	logger:setNames{'epoch', 'loss'}
-end
-
 meta = {batchsize=opt.batchsize, 
         rho=opt.rho, 
 		recurrentlayers=opt.recurrentlayers, 
 		denselayers=opt.denselayers, 
-		hiddensize=opt.hiddensize,
+		hiddensizes=opt.hiddensizes,
 		dropout=opt.dropout,
 		lr=opt.lr,
 		dataset=opt.d}
@@ -178,24 +185,30 @@ end
 
 function create_model()
 	local model = nn.Sequential()
-
 	local rnn = nn.Sequential()
-	rnn:add(nn.FastLSTM(data_width, opt.hiddensize, opt.rho))
+	local l = 1
+	--Recurrent input layer
+	rnn:add(nn.FastLSTM(data_width, opt.hiddensizes[l], opt.rho))
 	rnn:add(nn.SoftSign())
 	for i=1, opt.recurrentlayers-1 do
+		l = l + 1
 		rnn:add(nn.Dropout(opt.dropout))
-		rnn:add(nn.FastLSTM(opt.hiddensize, opt.hiddensize, opt.rho))
+		rnn:add(nn.FastLSTM(opt.hiddensizes[l-1], opt.hiddensizes[l], opt.rho))
 		rnn:add(nn.SoftSign())
 	end
 	model:add(nn.SplitTable(1,2))
 	model:add(nn.Sequencer(rnn))
 	model:add(nn.SelectTable(-1))
-	for i=1, opt.denselayers-1 do
+	--Dense layers
+	for i=1, opt.denselayers do
+		l = l + 1
 		model:add(nn.Dropout(opt.dropout))
-		model:add(nn.Linear(opt.hiddensize, opt.hiddensize))
+		model:add(nn.Linear(opt.hiddensizes[l-1], opt.hiddensizes[l]))
 		model:add(nn.ReLU())
 	end
-	model:add(nn.Linear(opt.hiddensize, data_width))
+	--Output layer
+	model:add(nn.Dropout(opt.dropout))
+	model:add(nn.Linear(opt.hiddensizes[l], data_width))
 	model:add(nn.ReLU())
 
 	if opt.opencl then 
@@ -213,7 +226,14 @@ if opt.opencl then criterion:cl() end
 data = create_dataset(opt.d)
 data = normalize_col(data, 92)
 data = normalize_col(data, 93)
+
 totlen = get_total_len(data)
+
+if opt.log ~= '' then
+	logger = optim.Logger(opt.o..".log")
+	logger:setNames{'epoch', 'loss'}
+end
+
 train()
 if opt.o ~= '' then
 	torch.save(opt.o, model)
