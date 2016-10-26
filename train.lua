@@ -16,7 +16,7 @@ cmd:option('-denselayers', 1, 'Number of dense layers')
 cmd:option('-hiddensizes', '', 'Sizes of hidden layers, seperated by commas')
 cmd:option('-dropout', 0.5, 'Dropout probability')
 cmd:option('-lr', 0.01, 'Learning rate')
-cmd:option('-opencl', true, 'Use OpenCL')
+cmd:option('-opencl', false, 'Use OpenCL')
 opt = cmd:parse(arg or {})
 
 local h = opt.hiddensizes
