@@ -133,8 +133,8 @@ function train()
 
 	local optim_cfg = {learningRate=opt.lr}
 
-	for e = 1, math.floor(opt.ep*totlen/opt.batchsize) do
-		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize))
+	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
+		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
 		batches = batches + 1
 		optim.adagrad(feval, params, optim_cfg)
 	end
@@ -150,7 +150,6 @@ function get_total_len(data)
 	return i
 end
 
---TODO Lots of improvements to be made
 function create_batch(data, start_index)
 	local i = start_index
 	local song = {}
@@ -159,7 +158,7 @@ function create_batch(data, start_index)
 		if #s > i+1+opt.batchsize+opt.rho then
 			song = s
 			break
-		else 
+		else
 			i = i - #s
 		end
 		if i < 1 then i = 1 end
