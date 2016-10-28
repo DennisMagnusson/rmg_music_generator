@@ -11,6 +11,7 @@ cmd:option('-o', '', 'Model filename')
 cmd:option('-ep', 1, 'Number of epochs')
 cmd:option('-batchsize', 256, 'Batch Size')
 cmd:option('-rho', 50, 'Rho value')
+cmd:option('-recurrenttype', 'FastLSTM', 'Type of recurrent layer (FastLSTM, LSTM, GRU)')
 cmd:option('-recurrentlayers', 1, 'Number of recurrent layers')
 cmd:option('-denselayers', 1, 'Number of dense layers')
 cmd:option('-hiddensizes', '100,100', 'Sizes of hidden layers, seperated by commas')
@@ -41,6 +42,7 @@ batches = 0
 
 meta = {batchsize=opt.batchsize, 
         rho=opt.rho, 
+		recurrenttype=opt.recurrenttype,
 		recurrentlayers=opt.recurrentlayers, 
 		denselayers=opt.denselayers, 
 		hiddensizes=opt.hiddensizes,
@@ -186,13 +188,19 @@ function create_model()
 	local model = nn.Sequential()
 	local rnn = nn.Sequential()
 	local l = 1
+	
+	if opt.recurrenttype == 'FastLSTM' then recurrent = nn.FastLSTM
+	elseif opt.recurrenttype == 'LSTM' then recurrent = nn.LSTM
+	elseif opt.recurrenttype == 'GRU'  then recurrent = nn.GRU
+	else assert(false, "Error: Invalid recurrent type") end
+
 	--Recurrent input layer
-	rnn:add(nn.FastLSTM(data_width, opt.hiddensizes[l], opt.rho))
+	rnn:add(recurrent(data_width, opt.hiddensizes[l], opt.rho))
 	rnn:add(nn.SoftSign())
 	for i=1, opt.recurrentlayers-1 do
 		l = l + 1
 		rnn:add(nn.Dropout(opt.dropout))
-		rnn:add(nn.FastLSTM(opt.hiddensizes[l-1], opt.hiddensizes[l], opt.rho))
+		rnn:add(recurrent(opt.hiddensizes[l-1], opt.hiddensizes[l], opt.rho))
 		rnn:add(nn.SoftSign())
 	end
 	model:add(nn.SplitTable(1,2))
