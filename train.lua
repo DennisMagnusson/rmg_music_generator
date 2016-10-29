@@ -7,6 +7,7 @@ json = require 'json'
 
 cmd = torch.CmdLine()
 cmd:option('-d', 'data', 'Dataset directory')
+cmd:option('-datasize', 0, 'Size of dataset (for benchmarking)')
 cmd:option('-o', '', 'Model filename')
 cmd:option('-ep', 1, 'Number of epochs')
 cmd:option('-batchsize', 256, 'Batch Size')
@@ -17,7 +18,7 @@ cmd:option('-denselayers', 1, 'Number of dense layers')
 cmd:option('-hiddensizes', '100,100', 'Sizes of hidden layers, seperated by commas')
 cmd:option('-dropout', 0.5, 'Dropout probability')
 cmd:option('-lr', 0.01, 'Learning rate')
-cmd:option('-opencl', false, 'Use OpenCL')
+cmd:option('-opencl', true, 'Use OpenCL')
 opt = cmd:parse(arg or {})
 
 local h = opt.hiddensizes
@@ -138,7 +139,8 @@ function train()
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
 		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
 		batches = batches + 1
-		optim.adagrad(feval, params, optim_cfg)
+		--optim.adagrad(feval, params, optim_cfg)
+		optim.rmsprop(feval, params, optim_cfg)
 	end
 
 	model:evaluate() --Exit training mode
@@ -233,6 +235,13 @@ if opt.opencl then criterion:cl() end
 data = create_dataset(opt.d)
 data = normalize_col(data, 92)
 data = normalize_col(data, 93)
+
+if opt.datasize ~= 0 then
+	local l = #data
+	for i=opt.datasize, l do
+		data[i] = nil
+	end
+end
 
 totlen = get_total_len(data)
 
