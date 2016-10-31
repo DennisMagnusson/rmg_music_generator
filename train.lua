@@ -101,9 +101,8 @@ function next_batch()
 	start_index = start_index + opt.batchsize
 	if start_index >= totlen-opt.batchsize-1 then
 		start_index = 1
-		print("Epoch "..curr_ep.." done")
+		print("Epoch "..curr_ep.." loss=", totloss/batches)
 		curr_ep=curr_ep+1
-		print("loss", totloss/batches)
 		if logger then
 			logger:add{curr_ep, totloss/batches}
 		end
@@ -141,8 +140,7 @@ function train()
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
 		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
 		batches = batches + 1
-		--optim.adagrad(feval, params, optim_cfg)
-		optim.rmsprop(feval, params, optim_cfg)
+		optim.adagrad(feval, params, optim_cfg)
 	end
 
 	model:evaluate() --Exit training mode
