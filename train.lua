@@ -213,12 +213,12 @@ function create_model()
 		l = l + 1
 		model:add(nn.Dropout(opt.dropout))
 		model:add(nn.Linear(opt.hiddensizes[l-1], opt.hiddensizes[l]))
-		model:add(nn.ReLU())
+		model:add(nn.SoftSign())
 	end
 	--Output layer
 	model:add(nn.Dropout(opt.dropout))
 	model:add(nn.Linear(opt.hiddensizes[l], data_width))
-	model:add(nn.ReLU())
+	model:add(nn.Sigmoid())
 
 	if opt.opencl then 
 		return model:cl()
