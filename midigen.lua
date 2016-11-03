@@ -3,7 +3,6 @@ local midi = require 'MIDI'
 function generate(pattern, ...)
 	local arg = table.pack(...)
 	local score = {1000, {}}
-	local time = 0
 	pattern = to_abs_time(pattern)
 	for k, frame in pairs(pattern) do
 		local tones = {}
@@ -20,7 +19,6 @@ function generate(pattern, ...)
 		for i, tone in pairs(tones) do
 			score[2][#score[2]+1] = {'note', frame[92], frame[93], 1, tone+20, math.floor(frame[91]*127)}
 		end
-		time = time+1
 
 	end
 	
