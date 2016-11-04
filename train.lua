@@ -61,11 +61,16 @@ else
 	require 'nn'
 end
 
+-- Min-Maxed logarithms for data with long tail
+-- x_n = (ln(x+1)-ln(x_min)) / (ln(x_max)-ln(m_min))
 function normalize_col(r, col)
 	local min = 99990
 	local max = 0
 	for i=1, #r do
 		for u=1, #r[i] do
+			--Clamp max dt to 4s
+			if r[i][u][col] > 4000 then r[i][u][col] = 4000 end
+			r[i][u][col] = math.log(r[i][u][col]+1)-- +1 to prevent ln(0)
 			local val = r[i][u][col]
 			if min > val then min = val end
 			if max < val then max = val end
@@ -106,6 +111,7 @@ function next_batch()
 		if logger then
 			logger:add{curr_ep, totloss/batches}
 		end
+		if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
 		totloss = 0
 		batches = 0
 	end
@@ -227,7 +233,6 @@ function create_model()
 	end
 end
 
-
 model = create_model()
 params, gradparams = model:getParameters()
 criterion = nn.MSECriterion(true)
@@ -251,6 +256,7 @@ if opt.log ~= '' then
 end
 
 train()
+
 if opt.o ~= '' then
 	torch.save(opt.o, model)
 	local file = assert(io.open(opt.o..".meta", 'w'))

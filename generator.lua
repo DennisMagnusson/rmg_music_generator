@@ -18,7 +18,7 @@ function denormalize_col(r, col)
 	local min = meta[col..'min']
 	local max = meta[col..'max']
 	for i=1, #r do
-		r[i][col] = r[i][col]*(max-min)-min
+		r[i][col] = math.floor(math.exp(r[i][col]*(max-min)+min)-1)
 	end
 	return r
 end
@@ -76,10 +76,10 @@ function sample(frame)
 		frame[i] = r[i]
 	end
 	--Pedal
-	if math.random > frame[89] then
+	if math.random() > frame[89] then
 		frame[89] = 1
 		frame[90] = 0
-	elseif math.random > frame[90] then
+	elseif math.random() > frame[90] then
 		frame[89] = 0
 		frame[90] = 1
 	else
