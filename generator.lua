@@ -1,4 +1,5 @@
 require 'midigen'
+require 'midiparse'
 require 'torch'
 require 'nn'
 require 'rnn'
@@ -12,6 +13,7 @@ cmd:option('-temperature', 1.0, 'Temperature')
 cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
 cmd:option('-k', 1.5, 'k-value')
+cmd:option('-start', '', 'File to use the first rho timesteps on')
 opt = cmd:parse(arg or {})
 
 function denormalize_col(r, col)
@@ -25,7 +27,12 @@ end
 
 function create_song()
 	local song = torch.Tensor(opt.len, data_width)
-	local x = torch.zeros(meta['rho'], data_width)
+	local x = torch.Tensor()
+	if opt.start == '' then
+		x = torch.zeros(meta['rho'], data_width)
+	else
+		x = torch.Tensor(load_start(opt.start)) --Think the problem is here
+	end
 	x[meta['rho']][opt.firstnote] = 1
 	local frame = torch.zeros(data_width)
 	for i=1, opt.len do
@@ -37,10 +44,12 @@ function create_song()
 		local pd = model:forward(x)--Probability distribution... thing
 		pd = pd:reshape(data_width)
 		frame = sample(pd)
+		print(frame)
 
 		song[i] = torch.Tensor(frame)
 	end
 	local r = torch.totable(song)
+	for _, f in pairs(r) do print(f[92]) end
 	r = denormalize_col(r, 92)
 	r = denormalize_col(r, 93)
 
@@ -87,6 +96,20 @@ function sample(frame)
 		frame[90] = 0
 	end
 	return frame
+end
+
+function normalize(r, col)
+	r[col] = ((math.log(r[col]+1)-meta[col..'min'])/(meta[col..'max']-meta[col..'min']))
+	return r
+end
+
+function load_start(filename)
+	local start = parse(filename)
+	local r = {}
+	for i=1, meta['rho'] do
+		r[i] = normalize(normalize(start[i], 92), 93)
+	end
+	return r
 end
 
 function get_notes(r)
