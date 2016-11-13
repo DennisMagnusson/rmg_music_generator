@@ -165,10 +165,12 @@ end
 function create_batch(data, start_index)
 	local i = start_index
 	local song = {}
+	local songindex = 0
 	--Select the correct song
 	for k, s in pairs(data) do
-		if #s > i+1+opt.batchsize+opt.rho then
+		if #s > i then
 			song = s
+			songindex = k
 			break
 		else
 			i = i - #s
@@ -180,6 +182,14 @@ function create_batch(data, start_index)
 	local y = torch.zeros(opt.batchsize, data_width)
 
 	for u = 1, opt.batchsize do
+		::s::
+		if #song < i+u+opt.rho+1 then
+			song = data[songindex+1]
+			songindex = songindex+1
+			i=1
+			goto s
+		end
+
 		for o = opt.rho, 1, -1 do
 			x[u][o] = torch.Tensor(song[i+o+u])
 		end
@@ -253,10 +263,10 @@ end
 
 totlen = get_total_len(data)
 
-if opt.log ~= '' then
+if opt.o ~= '' then
 	logger = optim.Logger(opt.o..".log")
 	logger:setNames{'epoch', 'loss'}
-else print("WARNING: No output file!") end --To prevent future fuckups
+else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future fuckups
 
 train()
 
