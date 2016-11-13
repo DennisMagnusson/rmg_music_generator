@@ -18,6 +18,7 @@ cmd:option('-denselayers', 1, 'Number of dense layers')
 cmd:option('-hiddensizes', '100,100', 'Sizes of hidden layers, seperated by commas')
 cmd:option('-dropout', 0.5, 'Dropout probability')
 cmd:option('-lr', 0.01, 'Learning rate')
+cmd:option('-lrdecay', 1e-5, 'Learning rate decay')
 cmd:option('-cpu', false, 'Use CPU')
 opt = cmd:parse(arg or {})
 
@@ -51,6 +52,7 @@ meta = {batchsize=opt.batchsize,
 		hiddensizes=opt.hiddensizes,
 		dropout=opt.dropout,
 		lr=opt.lr,
+		lrdecay=opt.lrdecay,
 		dataset=opt.d}
 
 if opt.opencl then
@@ -141,7 +143,7 @@ function train()
 	math.randomseed(os.time())
 	model:training()--Training mode
 
-	local optim_cfg = {learningRate=opt.lr}
+	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay}
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
 		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
@@ -238,6 +240,7 @@ params, gradparams = model:getParameters()
 criterion = nn.MSECriterion(true)
 if opt.opencl then criterion:cl() end
 data = create_dataset(opt.d)
+
 data = normalize_col(data, 92)
 data = normalize_col(data, 93)
 
@@ -253,7 +256,7 @@ totlen = get_total_len(data)
 if opt.log ~= '' then
 	logger = optim.Logger(opt.o..".log")
 	logger:setNames{'epoch', 'loss'}
-end
+else print("WARNING: No output file!") end --To prevent future fuckups
 
 train()
 

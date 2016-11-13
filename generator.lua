@@ -30,26 +30,26 @@ function create_song()
 	local x = torch.Tensor()
 	if opt.start == '' then
 		x = torch.zeros(meta['rho'], data_width)
+		x[meta['rho']][opt.firstnote] = 1
+		x[meta['rho']][93] = 0.2
+		x[meta['rho']][91] = 1
 	else
-		x = torch.Tensor(load_start(opt.start)) --Think the problem is here
+		x = torch.Tensor(load_start(opt.start))
 	end
-	x[meta['rho']][opt.firstnote] = 1
-	local frame = torch.zeros(data_width)
 	for i=1, opt.len do
+		local pd = model:forward(x)--Probability distribution... thing
+		pd = pd:reshape(data_width)
+		local frame = sample(pd)
+		--Push everything back one step
 		for u=2, meta['rho'] do
 			x[u-1] = x[u]
 		end
+		--Add frame
 		x[meta['rho']] = frame
-
-		local pd = model:forward(x)--Probability distribution... thing
-		pd = pd:reshape(data_width)
-		frame = sample(pd)
-		print(frame)
-
+		--Save frame
 		song[i] = torch.Tensor(frame)
 	end
 	local r = torch.totable(song)
-	for _, f in pairs(r) do print(f[92]) end
 	r = denormalize_col(r, 92)
 	r = denormalize_col(r, 93)
 

@@ -26,7 +26,10 @@ function parse(filename)
 
 	local r = {}
 	for k, event in pairs(notes) do
-		if #r > 1 and event[2]-notes[k-1][2] == 0 then
+		--Blend together if dt < 30 ms
+		if #r > 1 and event[2]-notes[k-1][2] <= 30 then
+			--Time
+			r[#r][92] = r[#r][92] + event[2]-notes[k-1][2]
 			--Pedal
 			if event[1] == 'control_change' then
 				if event[5] == 127 then r[#r][89] = 1
@@ -66,7 +69,7 @@ function parse(filename)
 		frame[91] = event[6]/127
 		--delta start_time
 		if #r <= 1 then 
-			frame[92] = 0
+			frame[92] = 0 --First one is zero
 		else
 			frame[92] = event[2] - notes[k-1][2]
 		end
