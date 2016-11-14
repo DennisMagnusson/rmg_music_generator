@@ -106,7 +106,7 @@ end
 
 function next_batch()
 	start_index = start_index + opt.batchsize
-	if start_index >= totlen-opt.batchsize-1 then
+	if start_index >= totlen-opt.batchsize-opt.rho-1 then
 		start_index = 1
 		print("Epoch "..curr_ep.." loss=", totloss/batches)
 		curr_ep=curr_ep+1
