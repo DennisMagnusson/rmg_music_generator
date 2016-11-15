@@ -61,7 +61,12 @@ if os.execute("ls "..opt.model) == opt.model then--Resume training WIP
 	meta = json.decode(file:read('*all'))
 	file:close()
 	meta['ep'] = meta['ep'] + opt.ep
+	--TODO Figure out a way to keep the log
+else
+	model = create_model()
+	params, gradparams = model:getParameters()
 end
+
 
 meta = {batchsize=opt.batchsize,
 		rho=opt.rho,
@@ -259,8 +264,6 @@ function create_model()
 	end
 end
 
-model = create_model()
-params, gradparams = model:getParameters()
 criterion = nn.MSECriterion(true)
 if opt.opencl then criterion:cl() end
 data = create_dataset(opt.d)
