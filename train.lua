@@ -53,20 +53,6 @@ totloss = 0
 loss = 0
 batches = 0
 
-if lfs.attributes(opt.o) then--Resume training WIP
-	model = torch.load(opt.o)
-	params, gradparams = model:getParameters()
-	--Read JSON
-	local file = assert(io.open(opt.o..".meta", 'r'))
-	meta = json.decode(file:read('*all'))
-	file:close()
-	meta['ep'] = meta['ep'] + opt.ep
-	--TODO Figure out a way to keep the log
-else
-	model = create_model()
-	params, gradparams = model:getParameters()
-end
-
 
 meta = {batchsize=opt.batchsize,
 		rho=opt.rho,
@@ -264,6 +250,19 @@ function create_model()
 	end
 end
 
+if lfs.attributes(opt.o) then--Resume training WIP
+	model = torch.load(opt.o)
+	--Read JSON
+	local file = assert(io.open(opt.o..".meta", 'r'))
+	meta = json.decode(file:read('*all'))
+	file:close()
+	meta['ep'] = meta['ep'] + opt.ep
+	--TODO Figure out a way to keep the log
+else
+	model = create_model()
+end
+
+params, gradparams = model:getParameters()
 criterion = nn.MSECriterion(true)
 if opt.opencl then criterion:cl() end
 data = create_dataset(opt.d)
