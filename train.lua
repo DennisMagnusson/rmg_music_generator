@@ -60,10 +60,12 @@ if os.execute("ls "..opt.model) == opt.model then--Resume training WIP
 	local file = assert(io.open(opt.model..".meta", 'r'))
 	meta = json.decode(file:read('*all'))
 	file:close()
+	meta['ep'] = meta['ep'] + opt.ep
 end
 
 meta = {batchsize=opt.batchsize,
-        rho=opt.rho,
+		rho=opt.rho,
+		ep=opt.ep,
 		recurrenttype=opt.recurrenttype,
 		recurrentlayers=opt.recurrentlayers,
 		denselayers=opt.denselayers,
