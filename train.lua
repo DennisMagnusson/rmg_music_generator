@@ -45,11 +45,11 @@ totloss = 0
 loss = 0
 batches = 0
 
-meta = {batchsize=opt.batchsize, 
-        rho=opt.rho, 
+meta = {batchsize=opt.batchsize,
+        rho=opt.rho,
 		recurrenttype=opt.recurrenttype,
-		recurrentlayers=opt.recurrentlayers, 
-		denselayers=opt.denselayers, 
+		recurrentlayers=opt.recurrentlayers,
+		denselayers=opt.denselayers,
 		hiddensizes=opt.hiddensizes,
 		dropout=opt.dropout,
 		lr=opt.lr,
