@@ -53,7 +53,7 @@ totloss = 0
 loss = 0
 batches = 0
 
-if os.execute("ls "..opt.o) == opt.model then--Resume training WIP
+if lfs.attributes(opt.o) then--Resume training WIP
 	model = torch.load(opt.o)
 	params, gradparams = model:getParameters()
 	--Read JSON
