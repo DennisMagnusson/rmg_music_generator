@@ -53,11 +53,11 @@ totloss = 0
 loss = 0
 batches = 0
 
-if os.execute("ls "..opt.model) == opt.model then--Resume training WIP
-	model = torch.load(opt.model)
+if os.execute("ls "..opt.o) == opt.model then--Resume training WIP
+	model = torch.load(opt.o)
 	params, gradparams = model:getParameters()
 	--Read JSON
-	local file = assert(io.open(opt.model..".meta", 'r'))
+	local file = assert(io.open(opt.o..".meta", 'r'))
 	meta = json.decode(file:read('*all'))
 	file:close()
 	meta['ep'] = meta['ep'] + opt.ep
