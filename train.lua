@@ -24,6 +24,14 @@ opt = cmd:parse(arg or {})
 
 opt.opencl = not opt.cpu
 
+if opt.opencl then
+	require 'cltorch'
+	require 'clnn'
+else
+	require 'torch'
+	require 'nn'
+end
+
 local h = opt.hiddensizes
 opt.hiddensizes = {}
 while true do
@@ -45,6 +53,15 @@ totloss = 0
 loss = 0
 batches = 0
 
+if os.execute("ls "..opt.model) == opt.model then--Resume training WIP
+	model = torch.load(opt.model)
+	params, gradparams = model:getParameters()
+	--Read JSON
+	local file = assert(io.open(opt.model..".meta", 'r'))
+	meta = json.decode(file:read('*all'))
+	file:close()
+end
+
 meta = {batchsize=opt.batchsize,
         rho=opt.rho,
 		recurrenttype=opt.recurrenttype,
@@ -55,14 +72,6 @@ meta = {batchsize=opt.batchsize,
 		lr=opt.lr,
 		lrdecay=opt.lrdecay,
 		dataset=opt.d}
-
-if opt.opencl then
-	require 'cltorch'
-	require 'clnn'
-else
-	require 'torch'
-	require 'nn'
-end
 
 -- Min-Maxed logarithms for data with long tail
 -- x_n = (ln(x+1)-ln(x_min)) / (ln(x_max)-ln(m_min))

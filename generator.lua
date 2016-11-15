@@ -128,6 +128,6 @@ end
 model = torch.load(opt.model):double()
 data_width = 93
 file = assert(io.open(opt.model..".meta", 'r'))
-str = file:read('*all')
-meta = json.decode(str)
+meta = json.decode(file:read('*all'))
+file:close()
 create_song()
