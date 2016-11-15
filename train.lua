@@ -42,6 +42,7 @@ curr_ep = 1
 start_index = 1
 
 totloss = 0
+loss = 0
 batches = 0
 
 meta = {batchsize=opt.batchsize, 
@@ -108,10 +109,12 @@ function next_batch()
 	start_index = start_index + opt.batchsize
 	if start_index >= totlen-opt.batchsize-opt.rho-1 then
 		start_index = 1
-		print("Epoch "..curr_ep.." loss=", totloss/batches)
+		local prev_loss = loss
+		loss = totloss/batches
+		print("Epoch "..curr_ep.." loss="..loss, "deltaloss="..loss-prev_loss)
 		curr_ep=curr_ep+1
 		if logger then
-			logger:add{curr_ep, totloss/batches}
+			logger:add{curr_ep, loss}
 		end
 		if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
 		totloss = 0
