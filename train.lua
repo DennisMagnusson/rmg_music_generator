@@ -114,7 +114,7 @@ function next_batch()
 		local prev_loss = loss
 		loss = totloss/batches
 		local delta = loss-prev_loss
-		print("Epoch "..curr_ep.." loss="..loss, "deltaloss="..delta)
+		print("Ep "..curr_ep.." loss="..loss.." delta="..delta)
 		curr_ep=curr_ep+1
 		if logger then
 			logger:add{curr_ep, loss, delta}
@@ -153,6 +153,7 @@ function train()
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
 		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
+
 		batches = batches + 1
 		optim.adagrad(feval, params, optim_cfg)
 	end
