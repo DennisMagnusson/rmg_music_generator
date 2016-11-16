@@ -114,7 +114,7 @@ function next_batch()
 		local prev_loss = loss
 		loss = totloss/batches
 		local delta = loss-prev_loss
-		print("Ep "..curr_ep.." loss="..loss.." delta="..delta)
+		print("Ep "..curr_ep.."  loss="..loss.."  delta="..delta)
 		curr_ep=curr_ep+1
 		if logger then
 			logger:add{curr_ep, loss, delta}
