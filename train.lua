@@ -152,7 +152,8 @@ function train()
 	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay}
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
-		xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
+		xlua.progress(100*curr_ep+math.floor(start_index*100/totlen), 100*opt.ep)
+		--xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
 
 		batches = batches + 1
 		optim.adagrad(feval, params, optim_cfg)
