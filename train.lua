@@ -113,10 +113,11 @@ function next_batch()
 		start_index = 1
 		local prev_loss = loss
 		loss = totloss/batches
-		print("Epoch "..curr_ep.." loss="..loss, "deltaloss="..loss-prev_loss)
+		local delta = loss-prev_loss
+		print("Epoch "..curr_ep.." loss="..loss, "deltaloss="..delta)
 		curr_ep=curr_ep+1
 		if logger then
-			logger:add{curr_ep, loss}
+			logger:add{curr_ep, loss, delta}
 		end
 		if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
 		totloss = 0
@@ -281,7 +282,7 @@ totlen = get_total_len(data)
 
 if opt.o ~= '' then
 	logger = optim.Logger(opt.o..".log")
-	logger:setNames{'epoch', 'loss'}
+	logger:setNames{'epoch', 'loss', 'delta'}
 else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future fuckups
 
 train()
