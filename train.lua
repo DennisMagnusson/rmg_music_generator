@@ -47,11 +47,14 @@ end
 
 data_width = 93
 curr_ep = 1
+start_ep = 0
 start_index = 1
 
 totloss = 0
 loss = 0
 batches = 0
+
+resume = false
 
 
 meta = {batchsize=opt.batchsize,
@@ -152,7 +155,7 @@ function train()
 	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay}
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
-		xlua.progress(100*curr_ep+math.floor(start_index*100/totlen), 100*opt.ep)
+		xlua.progress(100*(curr_ep-start_index)+math.floor(start_index*100/totlen), 100*opt.ep)
 		--xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
 
 		batches = batches + 1
@@ -255,14 +258,23 @@ end
 
 if lfs.attributes(opt.o) then--Resume training WIP
 	model = torch.load(opt.o)
+	resume = true
 	--Read JSON
 	local file = assert(io.open(opt.o..".meta", 'r'))
 	meta = json.decode(file:read('*all'))
 	file:close()
+	print(meta)
+	curr_ep = meta['ep']+1
+	start_ep = meta['ep']
 	meta['ep'] = meta['ep'] + opt.ep
-	--TODO Figure out a way to keep the log
+	logger = optim.logger(opt.o..".log2")
 else
 	model = create_model()
+	
+	if opt.o ~= '' then
+		logger = optim.Logger(opt.o..".log")
+		logger:setNames{'epoch', 'loss', 'delta'}
+	else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future fuckups
 end
 
 params, gradparams = model:getParameters()
@@ -282,11 +294,6 @@ end
 
 totlen = get_total_len(data)
 
-if opt.o ~= '' then
-	logger = optim.Logger(opt.o..".log")
-	logger:setNames{'epoch', 'loss', 'delta'}
-else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future fuckups
-
 train()
 
 if opt.o ~= '' then
@@ -294,4 +301,6 @@ if opt.o ~= '' then
 	local file = assert(io.open(opt.o..".meta", 'w'))
 	file:write(json.encode(meta))
 	file:close()
+	--Merge the logs
+	if resume then os.execute("cat "..opt.o..".log2 >> "..opt.o.."log") end
 end
