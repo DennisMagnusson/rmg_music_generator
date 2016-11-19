@@ -153,10 +153,12 @@ function train()
 	model:training()--Training mode
 
 	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay}
-
+	local progress = -1
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
-		xlua.progress(100*(curr_ep-start_index)+math.floor(start_index*100/totlen), 100*opt.ep)
-		--xlua.progress(e, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize)
+		if progress ~= math.floor(100*(start_index/totlen)) then
+			progress = math.floor(100*(start_index/totlen))
+			xlua.progress(100*(curr_ep-start_ep-1)+progress, 100*opt.ep)
+		end
 
 		batches = batches + 1
 		optim.adagrad(feval, params, optim_cfg)
@@ -267,7 +269,7 @@ if lfs.attributes(opt.o) then--Resume training WIP
 	curr_ep = meta['ep']+1
 	start_ep = meta['ep']
 	meta['ep'] = meta['ep'] + opt.ep
-	logger = optim.logger(opt.o..".log2")
+	logger = optim.Logger(opt.o..".log2")
 else
 	model = create_model()
 	
@@ -294,6 +296,8 @@ end
 
 totlen = get_total_len(data)
 
+print(curr_ep)
+print(start_ep)
 train()
 
 if opt.o ~= '' then
