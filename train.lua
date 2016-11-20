@@ -1,4 +1,5 @@
 require 'midiparse'
+require 'validate'
 require 'lfs'
 require 'rnn'
 require 'optim'
@@ -7,6 +8,7 @@ json = require 'json'
 
 cmd = torch.CmdLine()
 cmd:option('-d', 'data', 'Dataset directory')
+cmd:option('-vd', 'slow2test', 'Validation data directory')
 cmd:option('-datasize', 0, 'Size of dataset (for benchmarking)')
 cmd:option('-o', '', 'Model filename')
 cmd:option('-ep', 1, 'Number of epochs')
@@ -56,6 +58,8 @@ batches = 0
 
 resume = false
 
+prev_valid = 0
+
 
 meta = {batchsize=opt.batchsize,
 		rho=opt.rho,
@@ -67,7 +71,8 @@ meta = {batchsize=opt.batchsize,
 		dropout=opt.dropout,
 		lr=opt.lr,
 		lrdecay=opt.lrdecay,
-		dataset=opt.d}
+		dataset=opt.d,
+		v_data=opt.vd}
 
 -- Min-Maxed logarithms for data with long tail
 -- x_n = (ln(x+1)-ln(x_min)) / (ln(x_max)-ln(m_min))
@@ -119,8 +124,13 @@ function next_batch()
 		local delta = loss-prev_loss
 		print("Ep "..curr_ep.."  loss="..loss.."  delta="..delta)
 		curr_ep=curr_ep+1
+
+		validation_err = validate(model, opt.rho, opt.vd, criterion)
+		local v_delta = prev_valid - validation_err
+		prev_valid = validation_err
+
 		if logger then
-			logger:add{curr_ep, loss, delta}
+			logger:add{curr_ep, loss, delta, validation_err, v_delta}
 		end
 		if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
 		totloss = 0
@@ -275,7 +285,7 @@ else
 	
 	if opt.o ~= '' then
 		logger = optim.Logger(opt.o..".log")
-		logger:setNames{'epoch', 'loss', 'delta'}
+		logger:setNames{'epoch', 'loss', 'delta', 'v_loss', 'v_delta'}
 	else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future fuckups
 end
 
