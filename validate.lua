@@ -1,5 +1,10 @@
 require 'midiparse'
 require 'lfs'
+require 'rnn'
+require 'optim'
+
+require 'cltorch'
+require 'clnn'
 
 local major = {0, 2, 4, 5, 7, 9, 11}
 local minor = {0, 2, 3, 5, 7, 8, 10}
@@ -8,12 +13,13 @@ function validate(model, rho, dir, criterion)
 	local data = create_data(rho, dir)
 	local toterr = 0
 	for i=1, #data[1] do
-		local x = data[1][i]
-		local y = data[2][i]
+		local x = data[1][i]:cl()
+		local y = data[2][i]:cl() --Error here
+		--Prop #x != #y
 
 		local pred = model:forward(x)
 		local err = criterion:forward(pred, y)
-		toterr = torerr + err
+		toterr = toterr + err
 	end
 
 	return toterr / #data[1]
@@ -40,7 +46,7 @@ function create_data(rho, dir)
 	for i=40, 52 do
 		for k=1, 8 do
 			--Major scale
-			x[#x+1] = torch.zeros(rho, 93)
+			x[#x+1] = torch.zeros(rho, 93):cl()
 			for f=1, #major-1 do
 				local frame = create_frame(i+major[f])
 				for q=1, 93 do
@@ -50,14 +56,14 @@ function create_data(rho, dir)
 			y[#y+1] = torch.Tensor(create_frame(i+major[#major]))
 
 			--Minor scale
-			x[#x+1] = torch.zeros(rho, 93)
+			x[#x+1] = torch.zeros(rho, 93):cl()
 			for f=1, #minor-1 do
 				local frame = create_frame(i+minor[f])
 				for q=1, 93 do
 					x[#x][rho-f][q] = frame[q]
 				end
 			end
-			y[#y] = torch.Tensor(create_frame(i+minor[#minor]))
+			y[#y+1] = torch.Tensor(create_frame(i+minor[#minor]))
 		end
 	end
 
