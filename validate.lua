@@ -14,8 +14,7 @@ function validate(model, rho, dir, criterion)
 	local toterr = 0
 	for i=1, #data[1] do
 		local x = data[1][i]:cl()
-		local y = data[2][i]:cl() --Error here
-		--Prop #x != #y
+		local y = data[2][i]:cl()
 
 		local pred = model:forward(x)
 		local err = criterion:forward(pred, y)
