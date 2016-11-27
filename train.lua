@@ -175,6 +175,22 @@ function train()
 		batches = batches + 1
 		optim.adagrad(feval, params, optim_cfg)
 	end
+	
+	--Get loss from last epoch
+	local prev_loss = loss
+	loss = totloss/batches
+	local delta = loss-prev_loss
+
+	validation_err = validate(model, opt.rho, opt.vd, criterion)
+	local v_delta = prev_valid - validation_err
+	prev_valid = validation_err
+
+	print("Ep "..curr_ep.." loss="..loss,"delta="..delta,"validation="..validation_err, "delta_valid="..v_delta)
+	curr_ep=curr_ep+1
+
+	if logger then
+		logger:add{curr_ep, loss, delta, validation_err, v_delta}
+	end
 
 	model:evaluate() --Exit training mode
 end
