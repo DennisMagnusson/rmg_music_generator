@@ -80,7 +80,7 @@ function normalize_col(r, col)
 	local min = 99990
 	local max = 0
 	for i=1, #r do
-		for u=1, #r[i] do
+		for u=1, r[i]:size()[1] do
 			--Clamp max dt to 4s
 			if r[i][u][col] > 4000 then r[i][u][col] = 4000 end
 			r[i][u][col] = math.log(r[i][u][col]+1)-- +1 to prevent ln(0)
@@ -91,7 +91,7 @@ function normalize_col(r, col)
 	end
 
 	for i=1, #r do
-		for u=1, #r[i] do
+		for u=1, r[i]:size()[1] do
 			r[i][u][col] = (r[i][u][col] - min)/(max - min)
 		end
 	end
@@ -106,9 +106,10 @@ function create_dataset(dir)
 	local d = {}
 	for filename in lfs.dir(dir.."/.") do
 		if filename[1] == '.' then goto cont end
+		if opt.datasize ~= 0 and #d >= opt.datasize then return d end
 		local song = parse(dir.."/"..filename)
 		if #song > 2 then
-			d[#d+1] = song
+			d[#d+1] = torch.Tensor(song)
 		end
 		::cont::
 	end
@@ -181,23 +182,23 @@ end
 function get_total_len(data)
 	local i = 0
 	for k, s in pairs(data) do
-		i = i + #s
+		i = i + s:size()[1]
 	end
 	return i
 end
 
 function create_batch(data, start_index)
 	local i = start_index
-	local song = {}
+	local song = torch.Tensor()
 	local songindex = 0
 	--Select the correct song
 	for k, s in pairs(data) do
-		if #s > i then
+		if s:size()[1] > i then
 			song = s
 			songindex = k
 			break
 		else
-			i = i - #s
+			i = i - s:size()[1]
 		end
 		if i < 1 then i = 1 end
 	end
@@ -207,7 +208,7 @@ function create_batch(data, start_index)
 
 	for u = 1, opt.batchsize do
 		::s::
-		if #song < i+u+opt.rho+1 then
+		if song:size()[1] < i+u+opt.rho+1 then
 			song = data[songindex+1]
 			songindex = songindex+1
 			i=1
