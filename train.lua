@@ -123,8 +123,9 @@ function next_batch()
 		local prev_loss = loss
 		loss = totloss/batches
 		local delta = loss-prev_loss
-
+		model:evaluate()
 		validation_err = validate(model, opt.rho, opt.vd, criterion)
+		model:training()
 		local v_delta = prev_valid - validation_err
 		prev_valid = validation_err
 
@@ -161,11 +162,12 @@ function feval(p)
 end
 
 function train()
-	math.randomseed(os.time())
 	model:training()--Training mode
+	math.randomseed(os.time())
 
 	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay}
 	local progress = -1
+
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
 		if progress ~= math.floor(100*(start_index/totlen)) then
 			progress = math.floor(100*(start_index/totlen))
@@ -173,6 +175,7 @@ function train()
 		end
 
 		batches = batches + 1
+
 		optim.adagrad(feval, params, optim_cfg)
 	end
 	
@@ -180,8 +183,10 @@ function train()
 	local prev_loss = loss
 	loss = totloss/batches
 	local delta = loss-prev_loss
-
+	
+	model:evaluate()
 	validation_err = validate(model, opt.rho, opt.vd, criterion)
+	model:training()
 	local v_delta = prev_valid - validation_err
 	prev_valid = validation_err
 
