@@ -130,11 +130,12 @@ function next_batch()
 		prev_valid = validation_err
 
 		print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
-		curr_ep=curr_ep+1
-
 		if logger then
 			logger:add{curr_ep, loss, delta, validation_err, v_delta}
 		end
+
+		curr_ep=curr_ep+1
+
 		if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
 		totloss = 0
 		batches = 0
@@ -192,11 +193,11 @@ function train()
 
 	print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
 
-	curr_ep=curr_ep+1
-
 	if logger then
 		logger:add{curr_ep, loss, delta, validation_err, v_delta}
 	end
+
+	curr_ep=curr_ep+1
 
 	model:evaluate() --Exit training mode
 end
