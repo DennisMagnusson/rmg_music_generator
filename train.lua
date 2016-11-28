@@ -126,10 +126,10 @@ function next_batch()
 		model:evaluate()
 		validation_err = validate(model, opt.rho, opt.vd, criterion)
 		model:training()
-		local v_delta = prev_valid - validation_err
+		local v_delta = validation_err - prev_valid
 		prev_valid = validation_err
 
-		print("Ep "..curr_ep.." loss="..loss,"delta="..delta,"validation="..validation_err, "delta_valid="..v_delta)
+		print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
 		curr_ep=curr_ep+1
 
 		if logger then
@@ -187,10 +187,11 @@ function train()
 	model:evaluate()
 	validation_err = validate(model, opt.rho, opt.vd, criterion)
 	model:training()
-	local v_delta = prev_valid - validation_err
+	local v_delta = validation_err - prev_valid
 	prev_valid = validation_err
 
-	print("Ep "..curr_ep.." loss="..loss,"delta="..delta,"validation="..validation_err, "delta_valid="..v_delta)
+	print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
+
 	curr_ep=curr_ep+1
 
 	if logger then
