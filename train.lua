@@ -141,7 +141,7 @@ function next_batch()
 		batches = 0
 	end
 
-	return create_batch(data, start_index)
+	return create_batch(start_index)
 end
 
 function feval(p)
@@ -210,7 +210,7 @@ function get_total_len(data)
 	return i
 end
 
-function create_batch(data, start_index)
+function create_batch(start_index)
 	local i = start_index
 	local song = torch.Tensor()
 	local songindex = 0
@@ -239,9 +239,9 @@ function create_batch(data, start_index)
 		end
 
 		for o = opt.rho, 1, -1 do
-			x[u][o] = torch.Tensor(song[i+o+u])
+			x[u][o] = song[i+o+u]
 		end
-		y[u] = torch.Tensor(song[i+u+opt.rho+1])
+		y[u] = song[i+u+opt.rho+1]
 	end
 
 	if opt.opencl then
@@ -333,6 +333,7 @@ totlen = get_total_len(data)
 
 print(curr_ep)
 print(start_ep)
+
 train()
 
 if opt.o ~= '' then

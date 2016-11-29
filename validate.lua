@@ -9,21 +9,21 @@ require 'clnn'
 local major = {0, 2, 4, 5, 7, 9, 11}
 local minor = {0, 2, 3, 5, 7, 8, 10}
 
-data = {}
+local vald_data = {}
 
 function validate(model, rho, dir, criterion)
-	data = create_data(rho, dir)
+	valid_data = create_data(rho, dir)
 	local toterr = 0
-	for i=1, #data[1] do
-		local x = data[1][i]:cl()
-		local y = data[2][i]:cl()
+	for i=1, #valid_data[1] do
+		local x = valid_data[1][i]:cl()
+		local y = valid_data[2][i]:cl()
 
 		local pred = model:forward(x)
 		local err = criterion:forward(pred, y)
 		toterr = toterr + err
 	end
 
-	return toterr / #data[1]
+	return toterr / #valid_data[1]
 end
 
 function create_frame(index)
