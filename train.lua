@@ -342,5 +342,5 @@ if opt.o ~= '' then
 	file:write(json.encode(meta))
 	file:close()
 	--Merge the logs
-	if resume then os.execute("cat "..opt.o..".log2 >> "..opt.o.."log") end
+	if resume then os.execute("cat "..opt.o..".log2 >> "..opt.o..".log") end
 end
