@@ -9,10 +9,10 @@ require 'clnn'
 local major = {0, 2, 4, 5, 7, 9, 11}
 local minor = {0, 2, 3, 5, 7, 8, 10}
 
-local vald_data = {}
+local valid_data = {}
 
 function validate(model, rho, dir, criterion)
-	valid_data = create_data(rho, dir)
+	if not valid_data[1] then valid_data = create_data(rho, dir) end
 	local toterr = 0
 	for i=1, #valid_data[1] do
 		local x = valid_data[1][i]:cl()
