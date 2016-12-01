@@ -303,6 +303,7 @@ if lfs.attributes(opt.o) then--Resume training WIP
 	print(meta)
 	curr_ep = meta['ep']+1
 	start_ep = meta['ep']
+	opt.lr = meta['lr']/(1+meta['lrdecay']*meta['ep'])--Restore decayed lr
 	meta['ep'] = meta['ep'] + opt.ep
 	logger = optim.Logger(opt.o..".log2")
 else
