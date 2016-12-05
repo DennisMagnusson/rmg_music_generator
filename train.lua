@@ -124,7 +124,7 @@ function next_batch()
 		loss = totloss/batches
 		local delta = loss-prev_loss
 		model:evaluate()
-		validation_err = validate(model, opt.rho, opt.vd, criterion)
+		validation_err = validate(model, opt.rho, opt.batchsize, opt.vd, criterion)
 		model:training()
 		local v_delta = validation_err - prev_valid
 		prev_valid = validation_err
@@ -186,7 +186,7 @@ function train()
 	local delta = loss-prev_loss
 	
 	model:evaluate()
-	validation_err = validate(model, opt.rho, opt.vd, criterion)
+	validation_err = validate(model, opt.rho, opt.batchsize, opt.vd, criterion)
 	model:training()
 	local v_delta = validation_err - prev_valid
 	prev_valid = validation_err
@@ -226,8 +226,8 @@ function create_batch(start_index)
 		if i < 1 then i = 1 end
 	end
 	--Create batch
-	local x = torch.zeros(opt.batchsize, opt.rho, data_width)
-	local y = torch.zeros(opt.batchsize, data_width)
+	local x = torch.Tensor(opt.batchsize, opt.rho, data_width)
+	local y = torch.Tensor(opt.batchsize, data_width)
 
 	for u = 1, opt.batchsize do
 		::s::

@@ -11,14 +11,12 @@ local minor = {0, 2, 3, 5, 7, 8, 10}
 
 local valid_data = {}
 
-function validate(model, rho, dir, criterion)
+function validate(model, rho, batchsize,dir, criterion)
 	if not valid_data[1] then valid_data = create_data(dir) end
 
 	local toterr = 0
 	local c = 0
 	local bs = 0
-
-	local batchsize = 350
 
 	local x = torch.Tensor(batchsize, rho, 93)
 	local y = torch.Tensor(batchsize, 93)
