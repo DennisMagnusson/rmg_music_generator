@@ -22,6 +22,7 @@ cmd:option('-dropout', 0.5, 'Dropout probability')
 cmd:option('-lr', 0.01, 'Learning rate')
 cmd:option('-lrdecay', 1e-5, 'Learning rate decay')
 cmd:option('-cpu', false, 'Use CPU')
+cmd:option('-weightdecay', 0, 'Weight decay')
 opt = cmd:parse(arg or {})
 
 opt.opencl = not opt.cpu
@@ -71,6 +72,7 @@ meta = {batchsize=opt.batchsize,
 		dropout=opt.dropout,
 		lr=opt.lr,
 		lrdecay=opt.lrdecay,
+		weightdecay=opt.weightdecay,
 		dataset=opt.d,
 		v_data=opt.vd}
 
@@ -166,7 +168,7 @@ function train()
 	model:training()--Training mode
 	math.randomseed(os.time())
 
-	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay}
+	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightdecay=opt.weightdecay}
 	local progress = -1
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
