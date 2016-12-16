@@ -9,11 +9,12 @@ require 'cltorch'
 cmd = torch.CmdLine()
 cmd:option('-o', '', 'Output file name')
 cmd:option('-model', '', 'Model file name')
-cmd:option('-temperature', 1.0, 'Temperature')
+cmd:option('-temperature', 0, 'Temperature')
 cmd:option('-firstnote', 41, 'First note index 1-88')
 cmd:option('-len', 100, 'Length of the notes')
-cmd:option('-k', 1.5, 'k-value')
+cmd:option('-k', 0, 'k-value')
 cmd:option('-start', '', 'File to use the first rho timesteps on')
+cmd:option('-print', false, 'Print the result')
 opt = cmd:parse(arg or {})
 
 function denormalize_col(r, col)
@@ -55,7 +56,8 @@ function create_song()
 
 	if opt.o ~= '' then
 		generate(r, opt.o)
-	else
+	end
+	if opt.print then
 		print(get_notes(song))
 	end
 end
@@ -65,10 +67,16 @@ function sample(frame)
 	for i=1, 88 do
 		r[i] = frame[i]
 	end
-	r = torch.exp(torch.log(r) / opt.temperature)
-	r = r / torch.sum(r)
-	r = r*(opt.k / torch.sum(r)) --Make the sum of r = k
+	local sum = opt.k
+	if sum == 0 then sum = torch.sum(r) end	
 
+	local tmp = opt.temperature
+	if tmp == 0 then tmp = 1 end
+	
+	r = torch.exp(torch.log(r) / tmp)
+	r = r / torch.sum(torch.exp(r))
+	r = r*(sum / torch.sum(r))
+	
 	local empty = true
 	for i = 1, 88 do
 		local rand = math.random()
@@ -85,10 +93,10 @@ function sample(frame)
 		frame[i] = r[i]
 	end
 	--Pedal
-	if math.random() > frame[89] then
+	if frame[89] > 0.7 then
 		frame[89] = 1
 		frame[90] = 0
-	elseif math.random() > frame[90] then
+	elseif frame[90] > 0.7 then
 		frame[89] = 0
 		frame[90] = 1
 	else
