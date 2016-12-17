@@ -25,7 +25,7 @@ function validate(model, rho, batchsize,dir, criterion)
 		for i=1, #song-rho-1 do
 
 			for o=rho, 1, -1 do
-				x[bs][o] = song[i+o]
+				x[bs][o] = torch.Tensor(song[i+o])
 			end
 			y[bs] = torch.Tensor(song[rho+i+1])
 			bs = bs+1
