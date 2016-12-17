@@ -16,17 +16,18 @@ function validate(model, rho, batchsize,dir, criterion)
 
 	local toterr = 0
 	local c = 0
-	local bs = 0
+	local bs = 1
 
 	local x = torch.Tensor(batchsize, rho, 93)
 	local y = torch.Tensor(batchsize, 93)
 
 	for _, song in pairs(valid_data) do
 		for i=1, #song-rho-1 do
-			for k=rho+i-1, i, -1 do
-				x[bs+1][k-i+1] = torch.Tensor(song[k])
+
+			for o=rho, 1, -1 do
+				x[bs][o] = song[i+o]
 			end
-			y[bs+1] = torch.Tensor(song[rho+i+1])
+			y[bs] = torch.Tensor(song[rho+i+1])
 			bs = bs+1
 
 			if bs == batchsize then
@@ -49,7 +50,7 @@ function normalize(r, col)
 	for i=1, #r do
 		for u=1, #r[i] do
 			if r[i][u][col] > 4000 then r[i][u][col] = 4000 end
-			r[i][u][col] = math.log(r[i][u][col]+1) / 8.29
+			r[i][u][col] = math.log(r[i][u][col]+1) / 8.294
 		end
 	end
 	return r
