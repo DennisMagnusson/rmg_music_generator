@@ -18,31 +18,31 @@ function validate(model, rho, batchsize,dir, criterion)
 	local c = 0
 	local bs = 1
 
-	local x = torch.Tensor(batchsize, rho, 93)
-	local y = torch.Tensor(batchsize, 93)
+	local x = torch.zeros(batchsize, rho, 93)
+	local y = torch.zeros(batchsize, 93)
 
 	for _, song in pairs(valid_data) do
-		for i=1, #song-rho-1 do
+		for i=1, #song-rho-2 do
 
-			for o=rho, 1, -1 do
-				x[bs][o] = torch.Tensor(song[i+o])
+			for o=1, rho do
+				x[bs][o] = torch.Tensor(song[i+o-1])
 			end
-			y[bs] = torch.Tensor(song[rho+i+1])
+			y[bs] = torch.Tensor(song[i+rho])
 			bs = bs+1
 
 			if bs == batchsize then
 				local pred = model:forward(x:cl())
 				local err = criterion:forward(pred, y:cl())
 				toterr = toterr + err
-				x = torch.Tensor(batchsize, rho, 93)
-				y = torch.Tensor(batchsize, 93)
+				x = torch.zeros(batchsize, rho, 93)
+				y = torch.zeros(batchsize, 93)
 				c = c+1
-				bs = 0
+				bs = 1
 			end
 			
 		end
 	end
-	
+
 	return toterr / c
 end
 
