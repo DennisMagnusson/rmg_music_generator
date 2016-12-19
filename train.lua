@@ -7,8 +7,8 @@ require 'xlua'
 json = require 'json'
 
 cmd = torch.CmdLine()
-cmd:option('-d', 'data', 'Dataset directory')
-cmd:option('-vd', 'slow2test', 'Validation data directory')
+cmd:option('-d', '', 'Dataset directory')
+cmd:option('-vd', '', 'Validation data directory')
 cmd:option('-datasize', 0, 'Size of dataset (for benchmarking)')
 cmd:option('-o', '', 'Model filename')
 cmd:option('-ep', 1, 'Number of epochs')
@@ -73,8 +73,9 @@ meta = {batchsize=opt.batchsize,
 		lr=opt.lr,
 		lrdecay=opt.lrdecay,
 		weightdecay=opt.weightdecay,
-		dataset=opt.d,
-		v_data=opt.vd}
+		d=opt.d,
+		vd=opt.vd,
+	   }
 
 -- Min-Maxed logarithms for data with long tail
 -- x_n = (ln(x+1)-ln(x_min)) / (ln(x_max)-ln(m_min))
@@ -302,7 +303,11 @@ if lfs.attributes(opt.o) then--Resume training WIP
 	local file = assert(io.open(opt.o..".meta", 'r'))
 	meta = json.decode(file:read('*all'))
 	file:close()
-	print(meta)
+	filename = opt.o
+	opt = meta --Maybe with this stuff
+	opt.o = filename
+	opt.datasize = 0
+	print(opt)
 	curr_ep = meta['ep']+1
 	start_ep = meta['ep']
 	opt.lr = meta['lr']/(1+meta['lrdecay']*meta['ep'])--Restore decayed lr
