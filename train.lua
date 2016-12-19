@@ -75,6 +75,7 @@ meta = {batchsize=opt.batchsize,
 		weightdecay=opt.weightdecay,
 		d=opt.d,
 		vd=opt.vd,
+		opencl=opt.opencl
 	   }
 
 -- Min-Maxed logarithms for data with long tail
@@ -304,14 +305,24 @@ if lfs.attributes(opt.o) then--Resume training WIP
 	meta = json.decode(file:read('*all'))
 	file:close()
 	filename = opt.o
-	opt = meta --Maybe with this stuff
+	ep = opt.ep
+
+	--Copy table
+	for key, val in pairs(meta) do
+		opt[key] = val
+	end
+
 	opt.o = filename
+	opt.ep = ep
 	opt.datasize = 0
+
 	print(opt)
+
 	curr_ep = meta['ep']+1
 	start_ep = meta['ep']
 	opt.lr = meta['lr']/(1+meta['lrdecay']*meta['ep'])--Restore decayed lr
 	meta['ep'] = meta['ep'] + opt.ep
+	print("opt.ep:", opt.ep, "meta.ep", meta.ep)
 	logger = optim.Logger(opt.o..".log2")
 else
 	model = create_model()
@@ -325,6 +336,7 @@ end
 params, gradparams = model:getParameters()
 criterion = nn.MSECriterion(true)
 if opt.opencl then criterion:cl() end
+
 data = create_dataset(opt.d)
 
 data = normalize_col(data, 92)
