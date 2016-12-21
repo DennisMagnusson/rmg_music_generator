@@ -16,11 +16,20 @@ function parse(filename)
 	file = nil
 	--Remove all non-notes or non-control_change events
 	local notes = {}
+
 	for k, event in pairs(m[2]) do
 		if event[1] == 'note' or event[1] == 'control_change' then 
 			notes[#notes+1] = event
 		end
 	end
+	if #notes == 0 then
+		for k, event in pairs(m[3]) do
+			if event[1] == 'note' or event[1] == 'control_change' then 
+				notes[#notes+1] = event
+			end
+		end
+	end
+
 
 	notes = sort_by_time(notes)
 
