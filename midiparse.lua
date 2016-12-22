@@ -22,7 +22,7 @@ function parse(filename)
 			notes[#notes+1] = event
 		end
 	end
-	if #notes == 0 then
+	if #notes == 0 and m[3] then
 		for k, event in pairs(m[3]) do
 			if event[1] == 'note' or event[1] == 'control_change' then 
 				notes[#notes+1] = event
@@ -84,6 +84,7 @@ function parse(filename)
 		end
 		--duration
 		frame[93] = event[3]
+		if frame[93] < 1 then frame[93] = 1 end
 		--Insert into r
 		r[#r+1] = frame
 		::EOL::
