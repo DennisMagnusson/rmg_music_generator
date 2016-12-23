@@ -108,6 +108,7 @@ end
 
 function create_dataset(dir)
 	local d = {}
+
 	for filename in lfs.dir(dir.."/.") do
 		if filename[1] == '.' then goto cont end
 		if opt.datasize ~= 0 and #d >= opt.datasize then return d end
@@ -117,12 +118,13 @@ function create_dataset(dir)
 		end
 		::cont::
 	end
+
 	return d
 end
 
 function next_batch()
 	start_index = start_index + opt.batchsize
-	if start_index >= totlen-opt.batchsize-opt.rho-1 then
+	if start_index >= totlen-opt.batchsize-opt.rho-1 then --End of epoch
 		start_index = 1
 		local prev_loss = loss
 		loss = totloss/batches
@@ -144,6 +146,8 @@ function next_batch()
 		totloss = 0
 		batches = 0
 	end
+
+	batches = batches + 1
 
 	return create_batch(start_index)
 end
@@ -170,7 +174,7 @@ function train()
 	model:training()--Training mode
 	math.randomseed(os.time())
 
-	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightdecay=opt.weightdecay}
+	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightDecay=opt.weightdecay}
 	local progress = -1
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
@@ -179,9 +183,8 @@ function train()
 			xlua.progress(100*(curr_ep-start_ep-1)+progress, 100*opt.ep)
 		end
 
-		batches = batches + 1
-
 		optim.adagrad(feval, params, optim_cfg)
+		collectgarbage() --Might help a bit
 	end
 	
 	--Get loss from last epoch
@@ -297,7 +300,7 @@ function create_model()
 	end
 end
 
-if lfs.attributes(opt.o) then--Resume training WIP
+if lfs.attributes(opt.o) then--Resume training
 	model = torch.load(opt.o)
 	resume = true
 	--Read JSON
@@ -330,7 +333,7 @@ else
 	if opt.o ~= '' then
 		logger = optim.Logger(opt.o..".log")
 		logger:setNames{'epoch', 'loss', 'delta', 'v_loss', 'v_delta'}
-	else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future fuckups
+	else print("\n\n\nWARNING: No output file!\n\n\n") end --To prevent future mistakes
 end
 
 params, gradparams = model:getParameters()
