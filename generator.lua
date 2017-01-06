@@ -27,6 +27,8 @@ function denormalize_col(r, col)
 end
 
 function create_song()
+	math.randomseed(os.time())
+
 	local song = torch.Tensor(opt.len, data_width)
 	local x = torch.Tensor()
 	if opt.start == '' then
