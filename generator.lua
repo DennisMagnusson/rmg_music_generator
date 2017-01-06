@@ -68,7 +68,7 @@ function sample(frame)
 		r[i] = frame[i]
 	end
 	local sum = opt.k
-	if sum == 0 then sum = torch.sum(r) end	
+	if sum == 0 then sum = torch.sum(r) end
 
 	local tmp = opt.temperature
 	if tmp == 0 then tmp = 1 end
@@ -76,11 +76,13 @@ function sample(frame)
 	r = torch.exp(torch.log(r) / tmp)
 	r = r / torch.sum(torch.exp(r))
 	r = r*(sum / torch.sum(r))
+
+	local max = torch.max(r)
 	
 	local empty = true
 	for i = 1, 88 do
 		local rand = math.random()
-		if r[i] > rand then
+		if r[i] > rand and (r[i] > 0.1 or r[i] == max) then --Ignore low probabilities
 			r[i] = 1
 			empty = false
 		else
