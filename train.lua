@@ -147,8 +147,6 @@ function next_batch()
 		batches = 0
 	end
 
-	batches = batches + 1
-
 	return create_batch(start_index)
 end
 
@@ -174,7 +172,8 @@ function train()
 	model:training()--Training mode
 	math.randomseed(os.time())
 
-	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightDecay=opt.weightdecay}
+	--TODO uncomment test local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightDecay=opt.weightdecay}
+	local optim_cfg = {learningRate=opt.lr, weightDecay=opt.weightdecay}
 	local progress = -1
 
 	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
@@ -182,6 +181,8 @@ function train()
 			progress = math.floor(100*(start_index/totlen))
 			xlua.progress(100*(curr_ep-start_ep-1)+progress, 100*opt.ep)
 		end
+
+		batches = batches + 1
 
 		optim.adagrad(feval, params, optim_cfg)
 		collectgarbage() --Might help a bit
