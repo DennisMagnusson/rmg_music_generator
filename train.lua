@@ -241,6 +241,7 @@ function create_batch(start_index)
 		::s::
 		if song:size()[1] < i+u+opt.rho+1 then
 			song = data[songindex+1]
+			if song==nil then break end
 			songindex = songindex+1
 			i=1
 			goto s
