@@ -7,7 +7,7 @@ require 'xlua'
 json = require 'json'
 
 cmd = torch.CmdLine()
-cmd:option('-d', '', 'Dataset directory')
+cmd:option('-d', 'slowtest', 'Dataset directory')
 cmd:option('-vd', '', 'Validation data directory')
 cmd:option('-datasize', 0, 'Size of dataset (for benchmarking)')
 cmd:option('-o', '', 'Model filename')
@@ -122,32 +122,42 @@ function create_dataset(dir)
 	return d
 end
 
-function next_batch()
-	start_index = start_index + opt.batchsize
-	if start_index >= totlen-opt.batchsize-opt.rho-1 then --End of epoch
-		start_index = 1
-		local prev_loss = loss
-		loss = totloss/batches
-		local delta = loss-prev_loss
-		model:evaluate()
-		validation_err = validate(model, opt.rho, opt.batchsize, opt.vd, criterion)
-		model:training()
-		local v_delta = validation_err - prev_valid
-		prev_valid = validation_err
+function new_epoch()
+	start_index = 1
+	local prev_loss = loss
+	loss = totloss/batches
+	local delta = loss-prev_loss
+	model:evaluate()
+	validation_err = validate(model, opt.rho, opt.batchsize, opt.vd, criterion)
+	model:training()
+	local v_delta = validation_err - prev_valid
+	prev_valid = validation_err
 
-		print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
-		if logger then
-			logger:add{curr_ep, loss, delta, validation_err, v_delta}
-		end
-
-		curr_ep=curr_ep+1
-
-		if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
-		totloss = 0
-		batches = 0
+	print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
+	if logger then
+		logger:add{curr_ep, loss, delta, validation_err, v_delta}
 	end
 
-	return create_batch(start_index)
+	curr_ep=curr_ep+1
+
+	if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
+	collectgarbage()
+	totloss = 0
+	batches = 0
+end
+
+function next_batch()
+	start_index = start_index + opt.batchsize
+
+	batch = create_batch(start_index)
+	if batch == -1 then
+		new_epoch()
+		batch = create_batch(start_index)
+	end
+
+	batches = batches + 1
+
+	return batch
 end
 
 function feval(p)
@@ -164,6 +174,7 @@ function feval(p)
 	local loss = criterion:forward(yhat, y)
 	totloss = totloss + loss
 	model:backward(x, criterion:backward(yhat, y))
+	collectgarbage()
 
 	return loss, gradparams
 end
@@ -172,40 +183,20 @@ function train()
 	model:training()--Training mode
 	math.randomseed(os.time())
 
-	--TODO uncomment test local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightDecay=opt.weightdecay}
-	local optim_cfg = {learningRate=opt.lr, weightDecay=opt.weightdecay}
+	local optim_cfg = {learningRate=opt.lr, learningRateDecay=opt.lrdecay, weightDecay=opt.weightdecay}
 	local progress = -1
 
-	for e = 1, math.floor(opt.ep*totlen/opt.batchsize)-opt.batchsize do
-		if progress ~= math.floor(100*(start_index/totlen)) then
-			progress = math.floor(100*(start_index/totlen))
-			xlua.progress(100*(curr_ep-start_ep-1)+progress, 100*opt.ep)
+	for e=1, opt.ep do
+		while curr_ep == start_ep+e do
+			if progress ~= math.floor(100*(start_index/totlen)) then
+				progress = math.floor(100*(start_index/totlen))
+				xlua.progress(100*(e-1)+progress, 100*opt.ep)
+			end
+
+			optim.rmsprop(feval, params, optim_cfg)
+			collectgarbage()
 		end
-
-		batches = batches + 1
-
-		optim.adagrad(feval, params, optim_cfg)
-		collectgarbage() --Might help a bit
 	end
-	
-	--Get loss from last epoch
-	local prev_loss = loss
-	loss = totloss/batches
-	local delta = loss-prev_loss
-	
-	model:evaluate()
-	validation_err = validate(model, opt.rho, opt.batchsize, opt.vd, criterion)
-	model:training()
-	local v_delta = validation_err - prev_valid
-	prev_valid = validation_err
-
-	print(string.format("Ep %d loss=%.8f  dl=%.6e  valid=%.8f  dv=%.6e", curr_ep, loss, delta, validation_err, v_delta))
-
-	if logger then
-		logger:add{curr_ep, loss, delta, validation_err, v_delta}
-	end
-
-	curr_ep=curr_ep+1
 
 	model:evaluate() --Exit training mode
 end
@@ -241,7 +232,7 @@ function create_batch(start_index)
 		::s::
 		if song:size()[1] < i+u+opt.rho+1 then
 			song = data[songindex+1]
-			if song==nil then break end
+			if song==nil then return -1 end
 			songindex = songindex+1
 			i=1
 			goto s
