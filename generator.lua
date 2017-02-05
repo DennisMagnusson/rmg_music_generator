@@ -17,6 +17,8 @@ cmd:option('-start', '', 'File to use the first rho timesteps on')
 cmd:option('-print', false, 'Print the result')
 opt = cmd:parse(arg or {})
 
+local prev_notes = {}
+
 function denormalize_col(r, col)
 	local min = meta[col..'min']
 	local max = meta[col..'max']
@@ -69,6 +71,18 @@ function sample(frame)
 	for i=1, 88 do
 		r[i] = frame[i]
 	end
+	
+	--Prevent the same note from being played over and over
+	local a = prev_notes[#prev_notes]
+	if #prev_notes > 5 then
+		for i=#prev_notes, #prev_notes-4, -1 do
+			if prev_notes[i] ~= a then goto smple end
+			a = prev_notes[i]
+		end
+		r[prev_notes[#prev_notes]] = 0
+	end
+	::smple::
+
 	local sum = opt.k
 	if sum == 0 then sum = torch.sum(r) end
 
@@ -82,10 +96,16 @@ function sample(frame)
 	local max = torch.max(r)
 	
 	local empty = true
-	for i = 1, 88 do
+	for _, i in pairs(torch.totable(torch.randperm(88))) do --Random order
 		local rand = math.random()
 		if r[i] > rand and (r[i] > 0.1 or r[i] == max) then --Ignore low probabilities
 			r[i] = 1
+			prev_notes[#prev_notes+1] = i
+			--Prevent awful doubles
+			r[i-1] = 0
+			r[i-2] = 0
+			r[i+1] = 0
+			r[i+2] = 0
 			empty = false
 		else
 			r[i] = 0
