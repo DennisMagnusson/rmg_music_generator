@@ -9,17 +9,15 @@ require 'clnn'
 local major = {0, 2, 4, 5, 7, 9, 11}
 local minor = {0, 2, 3, 5, 7, 8, 10}
 
-local valid_data = {}
-
 function validate(model, rho, batchsize,dir, criterion)
-	if not valid_data[1] then valid_data = create_data(dir) end
+	local valid_data = create_data(dir) --Faster than saving
 
 	local toterr = 0
 	local c = 0
 	local bs = 1
 
-	local x = torch.zeros(batchsize, rho, 93)
-	local y = torch.zeros(batchsize, 93)
+	local x = torch.Tensor(batchsize, rho, 93)
+	local y = torch.Tensor(batchsize, 93)
 
 	for _, song in pairs(valid_data) do
 		for i=1, #song-rho-2 do
@@ -33,7 +31,7 @@ function validate(model, rho, batchsize,dir, criterion)
 			if bs == batchsize then
 				local pred = model:forward(x:cl())
 				local err = criterion:forward(pred, y:cl())
-				toterr = toterr + err
+				toterr = toterr + torch.mean(torch.abs(y - yhat))
 				x = torch.zeros(batchsize, rho, 93)
 				y = torch.zeros(batchsize, 93)
 				c = c+1
@@ -42,6 +40,8 @@ function validate(model, rho, batchsize,dir, criterion)
 			
 		end
 	end
+
+	collectgarbage()
 
 	return toterr / c
 end

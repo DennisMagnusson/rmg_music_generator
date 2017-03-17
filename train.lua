@@ -172,8 +172,9 @@ function feval(p)
 	gradparams:zero()
 	local yhat = model:forward(x)
 	local loss = criterion:forward(yhat, y)
-	totloss = totloss + loss
+	totloss = totloss + torch.mean(torch.abs(y - yhat)) 
 	model:backward(x, criterion:backward(yhat, y))
+
 	collectgarbage()
 
 	return loss, gradparams
@@ -267,7 +268,7 @@ function create_model()
 	rnn:add(nn.SoftSign())
 	for i=1, opt.recurrentlayers-1 do
 		l = l + 1
-		rnn:add(nn.Dropout(opt.dropout))
+		--rnn:add(nn.Dropout(opt.dropout)) TODO Remove very temporary test
 		rnn:add(recurrent(opt.hiddensizes[l-1], opt.hiddensizes[l], opt.rho))
 		rnn:add(nn.SoftSign())
 	end
@@ -277,12 +278,12 @@ function create_model()
 	--Dense layers
 	for i=1, opt.denselayers do
 		l = l + 1
-		model:add(nn.Dropout(opt.dropout))
+		--model:add(nn.Dropout(opt.dropout)) TODO Remove very temporary test
 		model:add(nn.Linear(opt.hiddensizes[l-1], opt.hiddensizes[l]))
 		model:add(nn.Sigmoid())
 	end
 	--Output layer
-	model:add(nn.Dropout(opt.dropout))
+	--model:add(nn.Dropout(opt.dropout)) TODO Remove very temporary test
 	model:add(nn.Linear(opt.hiddensizes[l], data_width))
 	model:add(nn.Sigmoid())
 
