@@ -6,9 +6,6 @@ require 'optim'
 require 'cltorch'
 require 'clnn'
 
-local major = {0, 2, 4, 5, 7, 9, 11}
-local minor = {0, 2, 3, 5, 7, 8, 10}
-
 function validate(model, rho, batchsize,dir, criterion)
 	local valid_data = create_data(dir) --Faster than saving
 
@@ -29,11 +26,11 @@ function validate(model, rho, batchsize,dir, criterion)
 			bs = bs+1
 
 			if bs == batchsize then
-				local pred = model:forward(x:cl())
-				local err = criterion:forward(pred, y:cl())
-				toterr = toterr + torch.mean(torch.abs(y - yhat))
-				x = torch.zeros(batchsize, rho, 93)
-				y = torch.zeros(batchsize, 93)
+				local yhat = model:forward(x:cl())
+				local err =  torch.mean(torch.abs(y:cl() - yhat))
+				toterr = toterr + err
+				x = torch.Tensor(batchsize, rho, 93)
+				y = torch.Tensor(batchsize, 93)
 				c = c+1
 				bs = 1
 			end
