@@ -26,8 +26,15 @@ function validate(model, rho, batchsize,dir, criterion)
 			bs = bs+1
 
 			if bs == batchsize then
-				local yhat = model:forward(x:cl())
-				local err =  torch.mean(torch.abs(y:cl() - yhat))
+				local yhat = 0
+				local err = nil
+				if opt.opencl then
+					yhat = model:forward(x:cl())
+					err =  torch.mean(torch.abs(y:cl() - yhat))
+				else
+					yhat = model:forward(x)
+					err = torch.mean(torch.abs(y - yhat))
+				end
 				toterr = toterr + err
 				x = torch.Tensor(batchsize, rho, 93)
 				y = torch.Tensor(batchsize, 93)
