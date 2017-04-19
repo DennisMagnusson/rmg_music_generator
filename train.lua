@@ -141,6 +141,7 @@ function new_epoch()
 	curr_ep=curr_ep+1
 
 	if(curr_ep % 10 == 0 and opt.o ~= '') then torch.save(opt.o, model) end --Autosave
+
 	collectgarbage()
 	totloss = 0
 	batches = 0
